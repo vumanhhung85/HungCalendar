@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nhật Ký Điều Hành — Lịch Làm Việc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F5F1; --surface:#FFFFFF; --ink:#1C2321; --ink-soft:#5B615E;
+    --line:#E1DDD3; --accent:#2B4C7E; --accent-soft:#E7EDF5; --urgent:#C1440E;
+    --r-nhatro:#5C8368; --r-bmb:#A8384A; --r-ytế:#3A6EA5; --r-congty:#8B6D3F; --r-canhan:#6B5B95; --r-khac:#8A8A85;
+    --radius:10px; --shadow:0 1px 2px rgba(28,35,33,0.06), 0 4px 16px rgba(28,35,33,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  ::selection{background:var(--accent-soft);}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  /* ---------- LOGIN ---------- */
+  #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:40px 32px;max-width:360px;width:100%;box-shadow:var(--shadow);}
+  .login-card .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
+  .login-card h1{font-size:26px;margin:0 0 6px;font-weight:600;}
+  .login-card p{color:var(--ink-soft);font-size:14px;margin:0 0 24px;}
+  .login-card input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:12px;}
+  .login-card button{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;}
+  .login-error{color:var(--urgent);font-size:13px;margin-top:8px;display:none;}
+
+  /* ---------- LAYOUT ---------- */
+  #app{display:none;}
+  .topbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:18px 24px;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .topbar .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;display:block;margin-bottom:2px;}
+  .topbar h1{font-size:22px;margin:0;font-weight:600;}
+  .topbar .today{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);}
+
+  .shell{display:flex;max-width:1100px;margin:0 auto;}
+  .sidebar{width:220px;flex-shrink:0;padding:20px 16px;position:sticky;top:70px;align-self:flex-start;}
+  .sidebar h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-family:'Inter';font-weight:600;margin:0 0 10px;}
+  .chip-list{display:flex;flex-direction:column;gap:4px;margin-bottom:26px;}
+  .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13.5px;border:1px solid transparent;background:none;text-align:left;color:var(--ink);}
+  .chip:hover{background:var(--surface);}
+  .chip.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .stat-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .stat-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--ink-soft);}
+  .stat-row b{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
+
+  .main{flex:1;padding:20px 24px 100px;min-width:0;}
+  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);}
+  .tab{padding:9px 14px;font-size:13.5px;border:none;background:none;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
+  .tab .badge{background:var(--urgent);color:#fff;font-size:10px;padding:1px 6px;border-radius:20px;margin-left:5px;}
+
+  /* ---------- LOG FEED (signature element) ---------- */
+  .log{position:relative;}
+  .log::before{content:'';position:absolute;left:64px;top:6px;bottom:6px;width:1px;background:var(--line);}
+  .entry{position:relative;display:flex;gap:14px;padding:12px 0;cursor:pointer;}
+  .entry:hover .entry-card{border-color:var(--accent);}
+  .entry-time{width:64px;flex-shrink:0;text-align:right;padding-right:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);line-height:1.3;padding-top:12px;}
+  .entry-time .d{font-size:10px;text-transform:uppercase;color:var(--ink-soft);opacity:.8;}
+  .entry-node{position:absolute;left:60px;top:18px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);z-index:1;}
+  .entry-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);}
+  .entry-title{font-weight:600;font-size:14.5px;margin-bottom:4px;}
+  .entry-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);}
+  .tag{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;color:#fff;}
+  .badge-status{font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);}
+  .badge-status.warn{color:var(--urgent);border-color:var(--urgent);}
+  .empty{color:var(--ink-soft);font-size:14px;padding:40px 0 40px 76px;}
+
+  /* ---------- FAB ---------- */
+  .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--ink);color:#fff;border:none;font-size:26px;box-shadow:0 6px 20px rgba(28,35,33,0.3);z-index:30;}
+
+  /* ---------- MODAL ---------- */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(28,35,33,0.45);z-index:50;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+  .modal h2{font-size:19px;margin:0 0 4px;font-weight:600;}
+  .modal .sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em;}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff;}
+  .field textarea{resize:vertical;min-height:70px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .mode-switch{display:flex;gap:6px;margin-bottom:16px;background:var(--bg);padding:4px;border-radius:8px;}
+  .mode-switch button{flex:1;padding:8px;border:none;background:none;border-radius:6px;font-size:13px;color:var(--ink-soft);}
+  .mode-switch button.active{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow);}
+  .reminder-grid{display:flex;flex-wrap:wrap;gap:6px;}
+  .reminder-opt{padding:6px 11px;border:1px solid var(--line);border-radius:20px;font-size:12.5px;background:#fff;}
+  .reminder-opt.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .modal-actions{display:flex;gap:8px;margin-top:20px;}
+  .btn{padding:11px 16px;border-radius:8px;border:none;font-size:14px;font-weight:600;flex:1;}
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-ghost{background:none;border:1px solid var(--line);color:var(--ink);}
+  .btn-danger{background:none;border:1px solid var(--urgent);color:var(--urgent);}
+  .ai-status{font-size:13px;color:var(--accent);margin-bottom:12px;display:none;}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:-8px;margin-bottom:14px;}
+
+  @media(max-width:720px){
+    .sidebar{display:none;}
+    .shell{display:block;}
+    .main{padding:16px 16px 100px;}
+    .entry-time{width:48px;padding-right:10px;}
+    .log::before{left:48px;}
+    .entry-node{left:44px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <span class="eyebrow">Truy cập riêng tư</span>
+    <h1>Nhật ký điều hành</h1>
+    <p>Nhập mật khẩu để xem lịch làm việc.</p>
+    <input type="password" id="matKhauInput" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')dangNhap()">
+    <button onclick="dangNhap()">Vào bảng điều khiển</button>
+    <div class="login-error" id="loginError">Sai mật khẩu, anh thử lại nhé.</div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="topbar">
+    <div>
+      <span class="eyebrow">Nhật ký điều hành</span>
+      <h1>Lịch làm việc</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="today mono" id="todayLabel"></div>
+      <button onclick="moModalCaiDat()" title="Cài đặt" style="background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:15px;color:var(--ink-soft)">⚙️</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="sidebar">
+      <h3>Dự án</h3>
+      <div class="chip-list" id="projectChips"></div>
+      <h3>Tổng quan</h3>
+      <div class="stat-box" id="statBox"></div>
+    </div>
+
+    <div class="main">
+      <div class="tabs" id="tabs"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <button class="fab" onclick="moModalThem()">+</button>
+</div>
+
+<!-- ============ MODAL THÊM/SỬA ============ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Thêm việc mới</h2>
+    <div class="sub" id="modalSub">Dán tin nhắn hoặc nhập tay.</div>
+
+    <div class="mode-switch" id="modeSwitch">
+      <button id="modeAI" class="active" onclick="chonChe('ai')">🤖 AI đọc hộ</button>
+      <button id="modeTay" onclick="chonChe('tay')">✍️ Nhập tay</button>
+    </div>
+
+    <div id="khoAI">
+      <div class="field">
+        <label>Dán nội dung</label>
+        <textarea id="vanBanAI" placeholder="VD: 8h sáng mai họp đối tác BMB tại quận 1, nhắc trước 1 tiếng"></textarea>
+      </div>
+      <div class="ai-status" id="aiStatus">Đang đọc hiểu…</div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:16px" onclick="doiAIPhanTich()">Đọc bằng AI</button>
+    </div>
+
+    <div id="formChiTiet" style="display:none">
+      <div class="field"><label>Tiêu đề</label><input id="fTieuDe"></div>
+      <div class="row2">
+        <div class="field"><label>Ngày bắt đầu</label><input type="date" id="fNgayBD"></div>
+        <div class="field"><label>Giờ bắt đầu</label><input type="time" id="fGioBD"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Ngày kết thúc</label><input type="date" id="fNgayKT"></div>
+        <div class="field"><label>Giờ kết thúc</label><input type="time" id="fGioKT"></div>
+      </div>
+      <div class="field"><label>Địa điểm</label><input id="fDiaDiem" placeholder="Không bắt buộc"></div>
+      <div class="field">
+        <label>Dự án</label>
+        <select id="fDuAn">
+          <option value="NhaTro">Nhà trọ</option>
+          <option value="BMB">Boom Music Box</option>
+          <option value="TramYTe">Trạm y tế</option>
+          <option value="CongTy">Công ty</option>
+          <option value="CaNhan">Cá nhân</option>
+          <option value="Khac">Khác</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nhắc trước</label>
+        <div class="reminder-grid" id="reminderGrid"></div>
+        <div class="hint">Bấm chọn 1 hoặc nhiều mốc — có thể vừa nhắc trước 1 ngày, vừa nhắc trước 30 phút.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="dongModal()">Hủy</button>
+        <button class="btn btn-danger" id="btnXoa" style="display:none" onclick="xoaViecHienTai()">Xóa</button>
+        <button class="btn btn-primary" onclick="luuViec()">Lưu vào lịch</button>
+      </div>
+      <div class="modal-actions" id="ketQuaActions" style="display:none">
+        <button class="btn btn-ghost" onclick="danhDauKetQua('HoanThanh')">✅ Đánh dấu xong</button>
+        <button class="btn btn-ghost" onclick="danhDauKetQua('BoLo')">❌ Đánh dấu bỏ lỡ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL CÀI ĐẶT ============ -->
+<div class="overlay" id="overlayCaiDat">
+  <div class="modal">
+    <h2>Cài đặt hệ thống</h2>
+    <div class="sub">Sửa xong bấm Lưu — không cần đụng vào Code.gs nữa.</div>
+
+    <div class="field">
+      <label>Mật khẩu Dashboard mới</label>
+      <input type="password" id="csMatKhauMoi" placeholder="Để trống nếu không đổi">
+    </div>
+    <div class="field">
+      <label>Chat ID Telegram (nhận nhắc)</label>
+      <input id="csTgChatId" placeholder="VD: 8796559034">
+    </div>
+    <div class="field">
+      <label>Calendar ID</label>
+      <input id="csCalendarId" placeholder="Để trống = Calendar mặc định">
+    </div>
+    <div class="field">
+      <label>Token Bot Telegram mới</label>
+      <input type="password" id="csTgTokenMoi" placeholder="Hiện tại: —">
+      <div class="hint" id="csTgTokenHint" style="margin-top:6px"></div>
+    </div>
+    <div class="field">
+      <label>Claude API Key mới</label>
+      <input type="password" id="csClaudeKeyMoi" placeholder="Hiện tại: —">
+      <div class="hint" id="csClaudeKeyHint" style="margin-top:6px"></div>
+    </div>
+    <div class="hint">Đổi Token Bot thì phải chạy lại hàm <b>thietLapWebhookTelegram</b> trong Apps Script để Telegram nhận đúng token mới.</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="dongModalCaiDat()">Đóng</button>
+      <button class="btn btn-primary" onclick="luuCaiDat()">Lưu cài đặt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================== CẤU HÌNH ================== */
+const CONFIG = {
+  // 👉 Dán URL /exec của Apps Script Web App sau khi deploy vào đây
+  API_URL: 'DÁN_URL_APPS_SCRIPT_EXEC_VÀO_ĐÂY'
+};
+
+const DU_AN_LABEL = {NhaTro:'Nhà trọ', BMB:'Boom Music Box', TramYTe:'Trạm y tế', CongTy:'Công ty', CaNhan:'Cá nhân', Khac:'Khác'};
+const DU_AN_COLOR = {NhaTro:'var(--r-nhatro)', BMB:'var(--r-bmb)', TramYTe:'var(--r-ytế)', CongTy:'var(--r-congty)', CaNhan:'var(--r-canhan)', Khac:'var(--r-khac)'};
+const REMINDER_PRESETS = [{l:'15 phút',v:15},{l:'30 phút',v:30},{l:'1 tiếng',v:60},{l:'2 tiếng',v:120},{l:'1 ngày',v:1440},{l:'1 tuần',v:10080}];
+
+let TAT_CA = [];
+let TAB_HIEN_TAI = 'homnay';
+let DU_AN_LOC = 'Tat';
+let CHON_NHAC = new Set([30]);
+let DANG_SUA_ID = null;
+
+/* ================== ĐĂNG NHẬP ================== */
+window.onload = function(){
+  const mk = localStorage.getItem('nhacLich_matKhau');
+  if (mk) thuDangNhap(mk);
+  document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('vi-VN', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'});
+};
+
+function dangNhap(){
+  const mk = document.getElementById('matKhauInput').value;
+  thuDangNhap(mk);
+}
+
+async function thuDangNhap(mk){
+  try {
+    const res = await goiAPI({action:'login', matKhau: mk});
+    if (res.ok) {
+      localStorage.setItem('nhacLich_matKhau', mk);
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      taiDuLieu();
+    } else {
+      document.getElementById('loginError').style.display='block';
+    }
+  } catch(e){
+    document.getElementById('loginError').textContent = 'Không kết nối được server: ' + e.message;
+    document.getElementById('loginError').style.display='block';
+  }
+}
+
+function matKhau(){ return localStorage.getItem('nhacLich_matKhau') || ''; }
+
+/* ================== GỌI API ================== */
+async function goiAPI(payload){
+  const res = await fetch(CONFIG.API_URL, {method:'POST', body: JSON.stringify(payload)});
+  return await res.json();
+}
+
+async function taiDuLieu(){
+  const res = await goiAPI({action:'list', matKhau: matKhau()});
+  if (res.ok) { TAT_CA = res.data; ve(); }
+}
+
+/* ================== RENDER ================== */
+function ve(){
+  veSidebar();
+  veTabs();
+  veLog();
+}
+
+function veSidebar(){
+  const projects = ['Tat','NhaTro','BMB','TramYTe','CongTy','CaNhan','Khac'];
+  const wrap = document.getElementById('projectChips');
+  wrap.innerHTML = projects.map(p => {
+    const label = p==='Tat' ? 'Tất cả dự án' : DU_AN_LABEL[p];
+    const color = p==='Tat' ? 'var(--ink-soft)' : DU_AN_COLOR[p];
+    return `<button class="chip ${DU_AN_LOC===p?'active':''}" onclick="locDuAn('${p}')"><span class="dot" style="background:${color}"></span>${label}</button>`;
+  }).join('');
+
+  const hoatDong = TAT_CA.filter(x=>x.trangThai==='DaTao');
+  const choLamRo = TAT_CA.filter(x=>x.trangThai==='ChoLamRo');
+  const homNay = locTheoNgay(hoatDong, 0);
+  document.getElementById('statBox').innerHTML = `
+    <div class="stat-row"><span>Hôm nay</span><b>${homNay.length}</b></div>
+    <div class="stat-row"><span>Đang chờ làm rõ</span><b>${choLamRo.length}</b></div>
+    <div class="stat-row"><span>Tổng đang theo dõi</span><b>${hoatDong.length}</b></div>
+  `;
+}
+
+function locDuAn(p){ DU_AN_LOC = p; ve(); }
+
+function veTabs(){
+  const choLamRo = TAT_CA.filter(x=>x.trangThai==='ChoLamRo').length;
+  const tabs = [
+    {id:'homnay', label:'Hôm nay'},
+    {id:'tuannay', label:'Tuần này'},
+    {id:'tatca', label:'Tất cả'},
+    {id:'cholamro', label:'Chờ làm rõ', badge: choLamRo}
+  ];
+  document.getElementById('tabs').innerHTML = tabs.map(t=>
+    `<button class="tab ${TAB_HIEN_TAI===t.id?'active':''}" onclick="doiTab('${t.id}')">${t.label}${t.badge?`<span class="badge">${t.badge}</span>`:''}</button>`
+  ).join('');
+}
+
+function doiTab(id){ TAB_HIEN_TAI = id; ve(); }
+
+function locTheoNgay(list, taiSoNgayTuHomNay){
+  const now = new Date(); now.setHours(0,0,0,0);
+  const target = new Date(now); target.setDate(target.getDate()+taiSoNgayTuHomNay);
+  return list.filter(x=>{
+    if(!x.ngayGioBatDau) return false;
+    const d = new Date(x.ngayGioBatDau); d.setHours(0,0,0,0);
+    return d.getTime()===target.getTime();
+  });
+}
+
+function veLog(){
+  let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
+
+  if (TAB_HIEN_TAI==='cholamro') {
+    list = list.filter(x=>x.trangThai==='ChoLamRo');
+  } else {
+    list = list.filter(x=>x.trangThai==='DaTao');
+    const now = new Date();
+    if (TAB_HIEN_TAI==='homnay') {
+      list = locTheoNgay(list, 0);
+    } else if (TAB_HIEN_TAI==='tuannay') {
+      const start = new Date(now); start.setHours(0,0,0,0);
+      const end = new Date(start); end.setDate(end.getDate()+7);
+      list = list.filter(x=>{ const d = new Date(x.ngayGioBatDau); return d>=start && d<end; });
+    }
+  }
+
+  if (DU_AN_LOC!=='Tat') list = list.filter(x=>x.duAn===DU_AN_LOC);
+
+  list.sort((a,b)=> new Date(a.ngayGioBatDau||a.thoiGianTao) - new Date(b.ngayGioBatDau||b.thoiGianTao));
+
+  const el = document.getElementById('log');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">Chưa có việc nào ở đây. Bấm nút + để thêm.</div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(item=>{
+    const co = item.ngayGioBatDau ? new Date(item.ngayGioBatDau) : null;
+    const gio = co ? co.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+    const ngay = co ? co.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : '';
+    const mau = DU_AN_COLOR[item.duAn] || DU_AN_COLOR.Khac;
+    const trangThaiBadge = item.trangThai==='ChoLamRo'
+      ? `<span class="badge-status warn">Chờ làm rõ</span>`
+      : `<span class="badge-status">Đã lên lịch</span>`;
+    const trungBadge = item.canhBaoTrung ? `<span class="badge-status warn" title="Trùng giờ với: ${escapeHtml(item.canhBaoTrung)}">⚠️ Trùng giờ</span>` : '';
+    const ketQuaBadge = item.ketQua==='HoanThanh' ? `<span class="badge-status" style="color:#5C8368;border-color:#5C8368">✅ Hoàn thành</span>`
+                        : item.ketQua==='BoLo' ? `<span class="badge-status warn">❌ Bỏ lỡ</span>` : '';
+    return `
+      <div class="entry" onclick="moModalSua('${item.id}')">
+        <div class="entry-time">${gio}<div class="d">${ngay}</div></div>
+        <div class="entry-node" style="background:${mau}"></div>
+        <div class="entry-card">
+          <div class="entry-title">${escapeHtml(item.tieuDe || '(chưa rõ tiêu đề)')}</div>
+          <div class="entry-meta">
+            <span class="tag" style="background:${mau}">${DU_AN_LABEL[item.duAn]||'Khác'}</span>
+            ${item.diaDiem?`<span>📍 ${escapeHtml(item.diaDiem)}</span>`:''}
+            ${trangThaiBadge}
+            ${trungBadge}
+            ${ketQuaBadge}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ================== MODAL THÊM / SỬA ================== */
+function moModalThem(){
+  DANG_SUA_ID = null;
+  document.getElementById('modalTitle').textContent = 'Thêm việc mới';
+  document.getElementById('modalSub').textContent = 'Dán tin nhắn để AI đọc hộ, hoặc nhập tay.';
+  document.getElementById('modeSwitch').style.display='flex';
+  document.getElementById('vanBanAI').value='';
+  document.getElementById('btnXoa').style.display='none';
+  document.getElementById('ketQuaActions').style.display='none';
+  chonChe('ai');
+  document.getElementById('formChiTiet').style.display='none';
+  layDataForm(null);
+  veReminderGrid();
+  document.getElementById('overlay').classList.add('show');
+}
+
+function moModalSua(id){
+  const item = TAT_CA.find(x=>x.id===id);
+  if(!item) return;
+  DANG_SUA_ID = id;
+  document.getElementById('modalTitle').textContent = item.trangThai==='ChoLamRo' ? 'Bổ sung thông tin' : 'Sửa việc';
+  document.getElementById('modalSub').textContent = item.trangThai==='ChoLamRo'
+    ? 'Việc này AI chưa chắc ngày giờ — anh điền nốt giúp em.'
+    : 'Sửa thông tin rồi lưu lại.';
+  document.getElementById('modeSwitch').style.display='none';
+  document.getElementById('formChiTiet').style.display='block';
+  document.getElementById('btnXoa').style.display='block';
+  document.getElementById('ketQuaActions').style.display = item.trangThai==='DaTao' ? 'flex' : 'none';
+  layDataForm(item);
+  veReminderGrid();
+  document.getElementById('overlay').classList.add('show');
+}
+
+async function danhDauKetQua(ketQua){
+  if(!DANG_SUA_ID) return;
+  const res = await goiAPI({action:'danhDauKetQua', matKhau: matKhau(), id: DANG_SUA_ID, ketQua});
+  if(res.ok){ dongModal(); taiDuLieu(); } else { alert('Lỗi: ' + res.error); }
+}
+
+function dongModal(){ document.getElementById('overlay').classList.remove('show'); }
+
+function chonChe(che){
+  document.getElementById('modeAI').classList.toggle('active', che==='ai');
+  document.getElementById('modeTay').classList.toggle('active', che==='tay');
+  document.getElementById('khoAI').style.display = che==='ai' ? 'block' : 'none';
+  document.getElementById('formChiTiet').style.display = che==='tay' ? 'block' : 'none';
+}
+
+function layDataForm(item){
+  document.getElementById('fTieuDe').value = item?.tieuDe || '';
+  const bd = item?.ngayGioBatDau ? new Date(item.ngayGioBatDau) : null;
+  const kt = item?.ngayGioKetThuc ? new Date(item.ngayGioKetThuc) : null;
+  document.getElementById('fNgayBD').value = bd ? toDateStr(bd) : '';
+  document.getElementById('fGioBD').value = bd ? toTimeStr(bd) : '';
+  document.getElementById('fNgayKT').value = kt ? toDateStr(kt) : '';
+  document.getElementById('fGioKT').value = kt ? toTimeStr(kt) : '';
+  document.getElementById('fDiaDiem').value = item?.diaDiem || '';
+  document.getElementById('fDuAn').value = item?.duAn || 'CaNhan';
+  CHON_NHAC = new Set(item?.nhacTruocPhut ? String(item.nhacTruocPhut).split(',').map(Number) : [30]);
+}
+
+function toDateStr(d){ return d.toISOString().slice(0,10); }
+function toTimeStr(d){ return d.toTimeString().slice(0,5); }
+
+function veReminderGrid(){
+  document.getElementById('reminderGrid').innerHTML = REMINDER_PRESETS.map(r=>
+    `<button type="button" class="reminder-opt ${CHON_NHAC.has(r.v)?'active':''}" onclick="toggleNhac(${r.v})">${r.l}</button>`
+  ).join('');
+}
+
+function toggleNhac(v){
+  if (CHON_NHAC.has(v)) CHON_NHAC.delete(v); else CHON_NHAC.add(v);
+  if (CHON_NHAC.size===0) CHON_NHAC.add(30);
+  veReminderGrid();
+}
+
+/* ================== AI PHÂN TÍCH ================== */
+async function doiAIPhanTich(){
+  const text = document.getElementById('vanBanAI').value.trim();
+  if(!text){ return; }
+  const status = document.getElementById('aiStatus');
+  status.style.display='block'; status.textContent='Đang đọc hiểu…';
+  try {
+    const res = await goiAPI({action:'parse', matKhau: matKhau(), text});
+    status.style.display='none';
+    if(!res.ok){ alert('Lỗi đọc AI: '+res.error); return; }
+    const p = res.data;
+    layDataForm({
+      tieuDe: p.tieuDe, ngayGioBatDau: p.ngayGioBatDau, ngayGioKetThuc: p.ngayGioKetThuc,
+      diaDiem: p.diaDiem, duAn: p.duAn, nhacTruocPhut: (p.nhacTruocPhut||[30]).join(',')
+    });
+    veReminderGrid();
+    document.getElementById('formChiTiet').style.display='block';
+    if (p.doTinCay==='thap') {
+      document.getElementById('modalSub').textContent = '🤔 ' + (p.cauHoiLamRo || 'AI chưa chắc — anh kiểm tra lại ngày giờ giúp em.');
+    }
+  } catch(e){
+    status.textContent = 'Lỗi kết nối: ' + e.message;
+  }
+}
+
+/* ================== LƯU / XÓA ================== */
+function ghepNgayGio(ngay, gio){
+  if(!ngay || !gio) return null;
+  return `${ngay}T${gio}:00`;
+}
+
+async function luuViec(){
+  const tieuDe = document.getElementById('fTieuDe').value.trim();
+  const ngayGioBatDau = ghepNgayGio(document.getElementById('fNgayBD').value, document.getElementById('fGioBD').value);
+  if(!tieuDe || !ngayGioBatDau){ alert('Cần có tiêu đề và ngày giờ bắt đầu.'); return; }
+  let ngayGioKetThuc = ghepNgayGio(document.getElementById('fNgayKT').value, document.getElementById('fGioKT').value);
+  if(!ngayGioKetThuc){
+    const d = new Date(ngayGioBatDau); d.setHours(d.getHours()+1);
+    ngayGioKetThuc = d.toISOString().slice(0,19);
+  }
+  const item = {
+    tieuDe, ngayGioBatDau, ngayGioKetThuc,
+    diaDiem: document.getElementById('fDiaDiem').value.trim(),
+    duAn: document.getElementById('fDuAn').value,
+    nhacTruocPhut: Array.from(CHON_NHAC)
+  };
+
+  let res;
+  if (DANG_SUA_ID) {
+    const banGhiCu = TAT_CA.find(x=>x.id===DANG_SUA_ID);
+    item.id = DANG_SUA_ID;
+    item.calendarEventId = banGhiCu?.calendarEventId || '';
+    const action = banGhiCu?.trangThai==='ChoLamRo' ? 'confirm' : 'update';
+    res = await goiAPI({action, matKhau: matKhau(), item});
+  } else {
+    res = await goiAPI({action:'save', matKhau: matKhau(), item});
+  }
+
+  if(res.ok){
+    dongModal();
+    taiDuLieu();
+    if (res.canhBaoTrung) setTimeout(()=>alert('⚠️ Lịch này trùng giờ với: ' + res.canhBaoTrung), 300);
+  } else {
+    alert('Lỗi lưu: ' + res.error);
+  }
+}
+
+async function xoaViecHienTai(){
+  if(!DANG_SUA_ID) return;
+  if(!confirm('Xóa việc này khỏi lịch?')) return;
+  const res = await goiAPI({action:'delete', matKhau: matKhau(), id: DANG_SUA_ID});
+  if(res.ok){ dongModal(); taiDuLieu(); } else { alert('Lỗi xóa: ' + res.error); }
+}
+/* ================== CÀI ĐẶT ================== */
+async function moModalCaiDat(){
+  document.getElementById('csMatKhauMoi').value='';
+  document.getElementById('csTgTokenMoi').value='';
+  document.getElementById('csClaudeKeyMoi').value='';
+  const res = await goiAPI({action:'layCaiDat', matKhau: matKhau()});
+  if(res.ok){
+    document.getElementById('csTgChatId').value = res.data.tgChatId || '';
+    document.getElementById('csCalendarId').value = res.data.calendarId || '';
+    document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
+    document.getElementById('csClaudeKeyMoi').placeholder = 'Hiện tại: ' + res.data.claudeKeyMask;
+  }
+  document.getElementById('overlayCaiDat').classList.add('show');
+}
+
+function dongModalCaiDat(){ document.getElementById('overlayCaiDat').classList.remove('show'); }
+
+async function luuCaiDat(){
+  const matKhauMoi = document.getElementById('csMatKhauMoi').value;
+  const caiDat = {
+    tgChatId: document.getElementById('csTgChatId').value.trim(),
+    calendarId: document.getElementById('csCalendarId').value.trim(),
+    tgTokenMoi: document.getElementById('csTgTokenMoi').value.trim(),
+    claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
+    matKhauMoi: matKhauMoi
+  };
+  const res = await goiAPI({action:'luuCaiDat', matKhau: matKhau(), caiDat});
+  if(res.ok){
+    if(res.matKhauDaDoi) localStorage.setItem('nhacLich_matKhau', matKhauMoi);
+    alert('Đã lưu cài đặt.');
+    dongModalCaiDat();
+  } else {
+    alert('Lỗi lưu cài đặt: ' + res.error);
+  }
+}
+</script>
+</body>
+</html>
