@@ -47,15 +47,34 @@
   .chip:hover{background:var(--surface);}
   .chip.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot-so{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;font-family:'IBM Plex Mono',monospace;}
   .stat-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
   .stat-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--ink-soft);}
   .stat-row b{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
 
   .main{flex:1;padding:20px 24px 100px;min-width:0;}
-  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);}
-  .tab{padding:9px 14px;font-size:13.5px;border:none;background:none;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-1px;}
+
+  /* ---------- Ô NHẬP LỊCH NHANH ---------- */
+  .quick-add-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:22px;}
+  .quick-add-card textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:14.5px;background:none;color:var(--ink);min-height:44px;}
+  .quick-add-preview{position:relative;display:inline-block;margin-top:6px;}
+  .quick-add-preview img{max-height:90px;border-radius:8px;display:block;}
+  .quick-add-preview button{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid var(--surface);font-size:11px;line-height:1;}
+  .quick-add-actions{display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);}
+  .qa-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:none;font-size:16px;color:var(--ink-soft);}
+  .qa-btn.active{background:var(--urgent);border-color:var(--urgent);color:#fff;animation:qa-pulse 1.2s infinite;}
+  @keyframes qa-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .quick-add-status{font-size:12.5px;color:var(--accent);margin-top:6px;min-height:0;}
+  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  .tab{padding:9px 14px;font-size:13.5px;border:none;background:none;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;}
   .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
-  .tab .badge{background:var(--urgent);color:#fff;font-size:10px;padding:1px 6px;border-radius:20px;margin-left:5px;}
+  .tab .badge{background:var(--ink-soft);color:#fff;font-size:10px;padding:1px 6px;border-radius:20px;margin-left:5px;font-family:'IBM Plex Mono',monospace;}
+  .tab .badge.urgent{background:var(--urgent);}
+
+  /* ---------- THANH LỌC DỰ ÁN CHO MOBILE ---------- */
+  .mobile-chip-bar{display:none;}
+  .chip-list-mobile{display:flex;gap:6px;width:max-content;}
+  .chip-list-mobile .chip{white-space:nowrap;}
 
   /* ---------- LOG FEED (signature element) ---------- */
   .log{position:relative;}
@@ -108,6 +127,11 @@
     .entry-time{width:48px;padding-right:10px;}
     .log::before{left:48px;}
     .entry-node{left:44px;}
+    .mobile-chip-bar{display:block;padding:10px 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .topbar{padding:14px 16px;}
+    .topbar h1{font-size:19px;}
+    .modal{padding:20px;}
+    .row2{gap:8px;}
   }
 </style>
 </head>
@@ -115,13 +139,33 @@
 
 <!-- ============ LOGIN ============ -->
 <div id="loginScreen">
-  <div class="login-card">
+  <div class="login-card" id="loginCardDangNhap">
     <span class="eyebrow">Truy cập riêng tư</span>
     <h1>Nhật ký điều hành</h1>
     <p>Nhập mật khẩu để xem lịch làm việc.</p>
     <input type="password" id="matKhauInput" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')dangNhap()">
     <button onclick="dangNhap()">Vào bảng điều khiển</button>
     <div class="login-error" id="loginError">Sai mật khẩu, anh thử lại nhé.</div>
+    <div style="text-align:center;margin-top:14px">
+      <a href="#" onclick="moQuenMatKhau();return false" style="font-size:13px;color:var(--ink-soft)">Quên mật khẩu?</a>
+    </div>
+  </div>
+
+  <div class="login-card" id="loginCardQuenMK" style="display:none">
+    <span class="eyebrow">Khôi phục truy cập</span>
+    <h1>Quên mật khẩu</h1>
+    <p>Bấm gửi mã, mã khôi phục sẽ được gửi tới email đã cấu hình sẵn.</p>
+    <button onclick="guiMaKhoiPhuc()" id="btnGuiMa">Gửi mã khôi phục về email</button>
+    <div id="guiMaTrangThai" class="hint" style="margin-top:10px;display:none"></div>
+    <div style="margin-top:16px">
+      <input id="maKhoiPhucInput" placeholder="Nhập mã 6 số từ email">
+      <input type="password" id="matKhauMoiInput" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)">
+      <button onclick="datLaiMatKhau()">Đặt lại mật khẩu</button>
+    </div>
+    <div class="login-error" id="quenMKError"></div>
+    <div style="text-align:center;margin-top:14px">
+      <a href="#" onclick="dongQuenMatKhau();return false" style="font-size:13px;color:var(--ink-soft)">← Quay lại đăng nhập</a>
+    </div>
   </div>
 </div>
 
@@ -138,6 +182,10 @@
     </div>
   </div>
 
+  <div class="mobile-chip-bar">
+    <div class="chip-list-mobile" id="projectChipsMobile"></div>
+  </div>
+
   <div class="shell">
     <div class="sidebar">
       <h3>Dự án</h3>
@@ -147,6 +195,22 @@
     </div>
 
     <div class="main">
+      <div class="quick-add-card">
+        <textarea id="quickAddText" placeholder="Nhập lịch bằng chữ, dán/chọn ảnh, hoặc bấm 🎤 để nói... (giống nhắn Telegram)" rows="2"></textarea>
+        <div id="quickAddAnhPreview" class="quick-add-preview" style="display:none">
+          <img id="quickAddAnhImg" src="">
+          <button onclick="quickAddXoaAnh()" title="Bỏ ảnh">✕</button>
+        </div>
+        <div class="quick-add-actions">
+          <input type="file" id="quickAddFileInput" accept="image/*" style="display:none" onchange="quickAddChonFile(event)">
+          <button class="qa-btn" onclick="document.getElementById('quickAddFileInput').click()" title="Thêm ảnh">📷</button>
+          <button class="qa-btn" id="quickAddMicBtn" onclick="quickAddToggleMic()" title="Nói để nhập">🎤</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-primary" style="flex:0 0 auto;padding:9px 18px" onclick="quickAddGui()">Gửi</button>
+        </div>
+        <div class="quick-add-status" id="quickAddStatus"></div>
+      </div>
+
       <div class="tabs" id="tabs"></div>
       <div class="log" id="log"></div>
     </div>
@@ -200,7 +264,7 @@
       <div class="field">
         <label>Nhắc trước</label>
         <div class="reminder-grid" id="reminderGrid"></div>
-        <div class="hint">Bấm chọn 1 hoặc nhiều mốc — có thể vừa nhắc trước 1 ngày, vừa nhắc trước 30 phút.</div>
+        <div class="hint" style="margin-top:8px">Bấm chọn 1 hoặc nhiều mốc — có thể vừa nhắc trước 1 ngày, vừa nhắc trước 30 phút.</div>
       </div>
 
       <div class="modal-actions">
@@ -243,6 +307,10 @@
       <label>Claude API Key mới</label>
       <input type="password" id="csClaudeKeyMoi" placeholder="Hiện tại: —">
       <div class="hint" id="csClaudeKeyHint" style="margin-top:6px"></div>
+    </div>
+    <div class="field">
+      <label>Email nhận mã khôi phục mật khẩu</label>
+      <input id="csRecoveryEmail" placeholder="vd: vumanhhung85@gmail.com">
     </div>
     <div class="hint">Đổi Token Bot thì phải chạy lại hàm <b>thietLapWebhookTelegram</b> trong Apps Script để Telegram nhận đúng token mới.</div>
 
@@ -299,6 +367,52 @@ async function thuDangNhap(mk){
   }
 }
 
+/* ---- Quên mật khẩu ---- */
+function moQuenMatKhau(){
+  document.getElementById('loginCardDangNhap').style.display='none';
+  document.getElementById('loginCardQuenMK').style.display='block';
+  document.getElementById('maKhoiPhucInput').value='';
+  document.getElementById('matKhauMoiInput').value='';
+  document.getElementById('quenMKError').style.display='none';
+  document.getElementById('guiMaTrangThai').style.display='none';
+}
+
+function dongQuenMatKhau(){
+  document.getElementById('loginCardQuenMK').style.display='none';
+  document.getElementById('loginCardDangNhap').style.display='block';
+}
+
+async function guiMaKhoiPhuc(){
+  const btn = document.getElementById('btnGuiMa');
+  btn.disabled = true; btn.textContent = 'Đang gửi…';
+  try {
+    await goiAPI({action:'queMatKhau'});
+    const tt = document.getElementById('guiMaTrangThai');
+    tt.textContent = '📧 Nếu email đã cấu hình đúng, mã 6 số sẽ tới trong ít phút. Kiểm tra cả mục Spam.';
+    tt.style.display='block';
+  } catch(e){
+    alert('Lỗi kết nối: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = 'Gửi mã khôi phục về email';
+}
+
+async function datLaiMatKhau(){
+  const ma = document.getElementById('maKhoiPhucInput').value.trim();
+  const matKhauMoi = document.getElementById('matKhauMoiInput').value;
+  const err = document.getElementById('quenMKError');
+  if(!ma || !matKhauMoi){ err.textContent='Nhập đủ mã và mật khẩu mới.'; err.style.display='block'; return; }
+  const res = await goiAPI({action:'datLaiMatKhau', ma, matKhauMoi});
+  if(res.ok){
+    alert('Đã đặt lại mật khẩu. Đăng nhập lại bằng mật khẩu mới nhé.');
+    dongQuenMatKhau();
+    document.getElementById('matKhauInput').value = matKhauMoi;
+    dangNhap();
+  } else {
+    err.textContent = res.error || 'Có lỗi xảy ra.';
+    err.style.display='block';
+  }
+}
+
 function matKhau(){ return localStorage.getItem('nhacLich_matKhau') || ''; }
 
 /* ================== GỌI API ================== */
@@ -320,13 +434,23 @@ function ve(){
 }
 
 function veSidebar(){
+  const listHienTai = layDanhSachTheoTab();
+  const demTheoDuAn = {};
+  listHienTai.forEach(x=>{ demTheoDuAn[x.duAn] = (demTheoDuAn[x.duAn]||0) + 1; });
+
   const projects = ['Tat','NhaTro','BMB','TramYTe','CongTy','CaNhan','Khac'];
-  const wrap = document.getElementById('projectChips');
-  wrap.innerHTML = projects.map(p => {
+  const chipsHtml = projects.map(p => {
     const label = p==='Tat' ? 'Tất cả dự án' : DU_AN_LABEL[p];
     const color = p==='Tat' ? 'var(--ink-soft)' : DU_AN_COLOR[p];
-    return `<button class="chip ${DU_AN_LOC===p?'active':''}" onclick="locDuAn('${p}')"><span class="dot" style="background:${color}"></span>${label}</button>`;
+    const dem = p==='Tat' ? listHienTai.length : (demTheoDuAn[p]||0);
+    const dotHtml = dem>0
+      ? `<span class="dot-so" style="background:${color}">${dem}</span>`
+      : `<span class="dot" style="background:${color}"></span>`;
+    return `<button class="chip ${DU_AN_LOC===p?'active':''}" onclick="locDuAn('${p}')">${dotHtml}${label}</button>`;
   }).join('');
+
+  document.getElementById('projectChips').innerHTML = chipsHtml;
+  document.getElementById('projectChipsMobile').innerHTML = chipsHtml;
 
   const hoatDong = TAT_CA.filter(x=>x.trangThai==='DaTao');
   const choLamRo = TAT_CA.filter(x=>x.trangThai==='ChoLamRo');
@@ -340,17 +464,32 @@ function veSidebar(){
 
 function locDuAn(p){ DU_AN_LOC = p; ve(); }
 
+function demTheoTab(tabId){
+  let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
+  if (tabId==='cholamro') return list.filter(x=>x.trangThai==='ChoLamRo').length;
+  list = list.filter(x=>x.trangThai==='DaTao');
+  if (tabId==='homnay') return locTheoNgay(list, 0).length;
+  if (tabId==='tuannay') {
+    const now = new Date();
+    const start = new Date(now); start.setHours(0,0,0,0);
+    const end = new Date(start); end.setDate(end.getDate()+7);
+    return list.filter(x=>{ const d = new Date(x.ngayGioBatDau); return d>=start && d<end; }).length;
+  }
+  return list.length; // tatca
+}
+
 function veTabs(){
-  const choLamRo = TAT_CA.filter(x=>x.trangThai==='ChoLamRo').length;
   const tabs = [
     {id:'homnay', label:'Hôm nay'},
     {id:'tuannay', label:'Tuần này'},
     {id:'tatca', label:'Tất cả'},
-    {id:'cholamro', label:'Chờ làm rõ', badge: choLamRo}
+    {id:'cholamro', label:'Chờ làm rõ', urgent:true}
   ];
-  document.getElementById('tabs').innerHTML = tabs.map(t=>
-    `<button class="tab ${TAB_HIEN_TAI===t.id?'active':''}" onclick="doiTab('${t.id}')">${t.label}${t.badge?`<span class="badge">${t.badge}</span>`:''}</button>`
-  ).join('');
+  document.getElementById('tabs').innerHTML = tabs.map(t=>{
+    const dem = demTheoTab(t.id);
+    const badgeHtml = dem>0 ? `<span class="badge ${t.urgent?'urgent':''}">${dem}</span>` : '';
+    return `<button class="tab ${TAB_HIEN_TAI===t.id?'active':''}" onclick="doiTab('${t.id}')">${t.label}${badgeHtml}</button>`;
+  }).join('');
 }
 
 function doiTab(id){ TAB_HIEN_TAI = id; ve(); }
@@ -365,9 +504,8 @@ function locTheoNgay(list, taiSoNgayTuHomNay){
   });
 }
 
-function veLog(){
+function layDanhSachTheoTab(){
   let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
-
   if (TAB_HIEN_TAI==='cholamro') {
     list = list.filter(x=>x.trangThai==='ChoLamRo');
   } else {
@@ -381,7 +519,11 @@ function veLog(){
       list = list.filter(x=>{ const d = new Date(x.ngayGioBatDau); return d>=start && d<end; });
     }
   }
+  return list;
+}
 
+function veLog(){
+  let list = layDanhSachTheoTab();
   if (DU_AN_LOC!=='Tat') list = list.filter(x=>x.duAn===DU_AN_LOC);
 
   list.sort((a,b)=> new Date(a.ngayGioBatDau||a.thoiGianTao) - new Date(b.ngayGioBatDau||b.thoiGianTao));
@@ -570,7 +712,13 @@ async function xoaViecHienTai(){
   if(!DANG_SUA_ID) return;
   if(!confirm('Xóa việc này khỏi lịch?')) return;
   const res = await goiAPI({action:'delete', matKhau: matKhau(), id: DANG_SUA_ID});
-  if(res.ok){ dongModal(); taiDuLieu(); } else { alert('Lỗi xóa: ' + res.error); }
+  if(res.ok){
+    dongModal();
+    taiDuLieu();
+    if(res.canhBaoCalendar) setTimeout(()=>alert('⚠️ Đã xóa trong hệ thống, nhưng xóa trên Calendar bị lỗi: ' + res.canhBaoCalendar + '\nAnh kiểm tra và xóa tay trên Google Calendar giúp.'), 300);
+  } else {
+    alert('Lỗi xóa: ' + res.error);
+  }
 }
 /* ================== CÀI ĐẶT ================== */
 async function moModalCaiDat(){
@@ -581,6 +729,7 @@ async function moModalCaiDat(){
   if(res.ok){
     document.getElementById('csTgChatId').value = res.data.tgChatId || '';
     document.getElementById('csCalendarId').value = res.data.calendarId || '';
+    document.getElementById('csRecoveryEmail').value = res.data.recoveryEmail || '';
     document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
     document.getElementById('csClaudeKeyMoi').placeholder = 'Hiện tại: ' + res.data.claudeKeyMask;
   }
@@ -594,6 +743,7 @@ async function luuCaiDat(){
   const caiDat = {
     tgChatId: document.getElementById('csTgChatId').value.trim(),
     calendarId: document.getElementById('csCalendarId').value.trim(),
+    recoveryEmail: document.getElementById('csRecoveryEmail').value.trim(),
     tgTokenMoi: document.getElementById('csTgTokenMoi').value.trim(),
     claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
     matKhauMoi: matKhauMoi
@@ -605,6 +755,97 @@ async function luuCaiDat(){
     dongModalCaiDat();
   } else {
     alert('Lỗi lưu cài đặt: ' + res.error);
+  }
+}
+
+/* ================== Ô NHẬP LỊCH NHANH (chữ / ảnh / mic) ================== */
+let QUICK_ADD_ANH_BASE64 = null;
+
+function quickAddChonFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    QUICK_ADD_ANH_BASE64 = ev.target.result.split(',')[1]; // bỏ tiền tố data:image/...;base64,
+    document.getElementById('quickAddAnhImg').src = ev.target.result;
+    document.getElementById('quickAddAnhPreview').style.display='inline-block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function quickAddXoaAnh(){
+  QUICK_ADD_ANH_BASE64 = null;
+  document.getElementById('quickAddFileInput').value = '';
+  document.getElementById('quickAddAnhPreview').style.display='none';
+}
+
+// Nhận diện giọng nói bằng Web Speech API có sẵn trên trình duyệt (Chrome/Android tốt nhất,
+// Safari/iOS hỗ trợ hạn chế — nếu không bấm được mic, dùng mic ngay trên bàn phím điện thoại
+// khi gõ vào ô chữ cũng chuyển giọng nói thành chữ được, không bắt buộc phải qua nút này).
+let quickAddRecognition = null;
+let quickAddDangGhiAm = false;
+
+function quickAddToggleMic(){
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById('quickAddMicBtn');
+  const status = document.getElementById('quickAddStatus');
+
+  if(!SpeechRec){
+    status.textContent = '⚠️ Trình duyệt này chưa hỗ trợ nhận diện giọng nói. Anh thử Chrome, hoặc dùng mic ngay trên bàn phím điện thoại khi gõ vào ô chữ.';
+    return;
+  }
+
+  if(quickAddDangGhiAm){
+    quickAddRecognition.stop();
+    return;
+  }
+
+  quickAddRecognition = new SpeechRec();
+  quickAddRecognition.lang = 'vi-VN';
+  quickAddRecognition.interimResults = false;
+  quickAddRecognition.maxAlternatives = 1;
+
+  quickAddRecognition.onstart = function(){
+    quickAddDangGhiAm = true;
+    btn.classList.add('active');
+    status.textContent = '🎙️ Đang nghe… anh nói lịch cần thêm.';
+  };
+  quickAddRecognition.onresult = function(ev){
+    const text = ev.results[0][0].transcript;
+    const ta = document.getElementById('quickAddText');
+    ta.value = ta.value ? (ta.value.trim() + ' ' + text) : text;
+    status.textContent = '✅ Đã nghe xong, anh kiểm tra lại chữ rồi bấm Gửi.';
+  };
+  quickAddRecognition.onerror = function(ev){
+    status.textContent = '⚠️ Không nghe rõ (' + ev.error + '), anh thử lại hoặc gõ tay.';
+  };
+  quickAddRecognition.onend = function(){
+    quickAddDangGhiAm = false;
+    btn.classList.remove('active');
+  };
+  quickAddRecognition.start();
+}
+
+async function quickAddGui(){
+  const text = document.getElementById('quickAddText').value.trim();
+  const status = document.getElementById('quickAddStatus');
+  if(!text && !QUICK_ADD_ANH_BASE64){ status.textContent='Chưa có nội dung để gửi.'; return; }
+
+  status.textContent = '⏳ Đang xử lý…';
+  try{
+    const payload = {action:'nhapNhanh', matKhau: matKhau(), text};
+    if(QUICK_ADD_ANH_BASE64) payload.anhBase64 = QUICK_ADD_ANH_BASE64;
+    const res = await goiAPI(payload);
+    if(res.ok){
+      status.textContent = '✅ Đã xử lý xong, xem trong danh sách bên dưới (và Telegram cũng đã được báo).';
+      document.getElementById('quickAddText').value = '';
+      quickAddXoaAnh();
+      taiDuLieu();
+    } else {
+      status.textContent = '⚠️ Lỗi: ' + res.error;
+    }
+  } catch(e){
+    status.textContent = '⚠️ Lỗi kết nối: ' + e.message;
   }
 }
 </script>
