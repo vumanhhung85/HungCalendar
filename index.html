@@ -98,7 +98,7 @@
   /* ---------- MODAL ---------- */
   .overlay{display:none;position:fixed;inset:0;background:rgba(28,35,33,0.45);z-index:50;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
   .overlay.show{display:flex;}
-  .modal{background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+  .modal{position:relative;background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
   .modal h2{font-size:19px;margin:0 0 4px;font-weight:600;}
   .modal .sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px;}
   .field{margin-bottom:14px;}
@@ -220,8 +220,9 @@
 </div>
 
 <!-- ============ MODAL THÊM/SỬA ============ -->
-<div class="overlay" id="overlay">
+<div class="overlay" id="overlay" onclick="if(event.target===this) dongModal()">
   <div class="modal">
+    <button onclick="dongModal()" title="Đóng" style="position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-soft);line-height:1">✕</button>
     <h2 id="modalTitle">Thêm việc mới</h2>
     <div class="sub" id="modalSub">Dán tin nhắn hoặc nhập tay.</div>
 
@@ -240,16 +241,32 @@
     </div>
 
     <div id="formChiTiet" style="display:none">
-      <div class="field"><label>Tiêu đề</label><input id="fTieuDe"></div>
-      <div class="row2">
-        <div class="field"><label>Ngày bắt đầu</label><input type="date" id="fNgayBD"></div>
-        <div class="field"><label>Giờ bắt đầu</label><input type="time" id="fGioBD"></div>
+      <div class="field"><label id="labelTieuDe">Tiêu đề</label><input id="fTieuDe"></div>
+
+      <div class="field" id="khoiAnhDinhKem" style="display:none">
+        <label>Ảnh gốc đính kèm</label>
+        <a id="anhDinhKemLink" href="#" target="_blank">
+          <img id="anhDinhKemImg" src="" style="max-width:100%;border-radius:8px;border:1px solid var(--line);display:block">
+        </a>
       </div>
-      <div class="row2">
-        <div class="field"><label>Ngày kết thúc</label><input type="date" id="fNgayKT"></div>
-        <div class="field"><label>Giờ kết thúc</label><input type="time" id="fGioKT"></div>
+
+      <div id="khoiThoiGianViec">
+        <div class="row2">
+          <div class="field"><label>Ngày bắt đầu</label><input type="date" id="fNgayBD"></div>
+          <div class="field"><label>Giờ bắt đầu</label><input type="time" id="fGioBD"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Ngày kết thúc</label><input type="date" id="fNgayKT"></div>
+          <div class="field"><label>Giờ kết thúc</label><input type="time" id="fGioKT"></div>
+        </div>
+        <div class="field"><label>Địa điểm</label><input id="fDiaDiem" placeholder="Không bắt buộc"></div>
+        <div class="field">
+          <label>Nhắc trước</label>
+          <div class="reminder-grid" id="reminderGrid"></div>
+          <div class="hint" style="margin-top:8px">Bấm chọn 1 hoặc nhiều mốc — có thể vừa nhắc trước 1 ngày, vừa nhắc trước 30 phút.</div>
+        </div>
       </div>
-      <div class="field"><label>Địa điểm</label><input id="fDiaDiem" placeholder="Không bắt buộc"></div>
+
       <div class="field">
         <label>Dự án</label>
         <select id="fDuAn">
@@ -260,11 +277,6 @@
           <option value="CaNhan">Cá nhân</option>
           <option value="Khac">Khác</option>
         </select>
-      </div>
-      <div class="field">
-        <label>Nhắc trước</label>
-        <div class="reminder-grid" id="reminderGrid"></div>
-        <div class="hint" style="margin-top:8px">Bấm chọn 1 hoặc nhiều mốc — có thể vừa nhắc trước 1 ngày, vừa nhắc trước 30 phút.</div>
       </div>
 
       <div class="modal-actions">
@@ -281,8 +293,9 @@
 </div>
 
 <!-- ============ MODAL CÀI ĐẶT ============ -->
-<div class="overlay" id="overlayCaiDat">
+<div class="overlay" id="overlayCaiDat" onclick="if(event.target===this) dongModalCaiDat()">
   <div class="modal">
+    <button onclick="dongModalCaiDat()" title="Đóng" style="position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-soft);line-height:1">✕</button>
     <h2>Cài đặt hệ thống</h2>
     <div class="sub">Sửa xong bấm Lưu — không cần đụng vào Code.gs nữa.</div>
 
@@ -467,6 +480,7 @@ function locDuAn(p){ DU_AN_LOC = p; ve(); }
 function demTheoTab(tabId){
   let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
   if (tabId==='cholamro') return list.filter(x=>x.trangThai==='ChoLamRo').length;
+  if (tabId==='ghichu') return list.filter(x=>x.trangThai==='GhiChu').length;
   list = list.filter(x=>x.trangThai==='DaTao');
   if (tabId==='homnay') return locTheoNgay(list, 0).length;
   if (tabId==='tuannay') {
@@ -483,7 +497,8 @@ function veTabs(){
     {id:'homnay', label:'Hôm nay'},
     {id:'tuannay', label:'Tuần này'},
     {id:'tatca', label:'Tất cả'},
-    {id:'cholamro', label:'Chờ làm rõ', urgent:true}
+    {id:'cholamro', label:'Chờ làm rõ', urgent:true},
+    {id:'ghichu', label:'📝 Ghi chú'}
   ];
   document.getElementById('tabs').innerHTML = tabs.map(t=>{
     const dem = demTheoTab(t.id);
@@ -508,6 +523,8 @@ function layDanhSachTheoTab(){
   let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
   if (TAB_HIEN_TAI==='cholamro') {
     list = list.filter(x=>x.trangThai==='ChoLamRo');
+  } else if (TAB_HIEN_TAI==='ghichu') {
+    list = list.filter(x=>x.trangThai==='GhiChu');
   } else {
     list = list.filter(x=>x.trangThai==='DaTao');
     const now = new Date();
@@ -526,15 +543,21 @@ function veLog(){
   let list = layDanhSachTheoTab();
   if (DU_AN_LOC!=='Tat') list = list.filter(x=>x.duAn===DU_AN_LOC);
 
-  list.sort((a,b)=> new Date(a.ngayGioBatDau||a.thoiGianTao) - new Date(b.ngayGioBatDau||b.thoiGianTao));
+  if (TAB_HIEN_TAI==='ghichu') {
+    list.sort((a,b)=> new Date(b.thoiGianTao) - new Date(a.thoiGianTao)); // ghi chú: mới nhất lên đầu
+  } else {
+    list.sort((a,b)=> new Date(a.ngayGioBatDau||a.thoiGianTao) - new Date(b.ngayGioBatDau||b.thoiGianTao));
+  }
 
   const el = document.getElementById('log');
   if (!list.length) {
-    el.innerHTML = `<div class="empty">Chưa có việc nào ở đây. Bấm nút + để thêm.</div>`;
+    el.innerHTML = `<div class="empty">${TAB_HIEN_TAI==='ghichu' ? 'Chưa có ghi chú nào. Nhắn "ghi chú: ..." qua Telegram hoặc ô nhập nhanh phía trên.' : 'Chưa có việc nào ở đây. Bấm nút + để thêm.'}</div>`;
     return;
   }
 
   el.innerHTML = list.map(item=>{
+    if (item.trangThai==='GhiChu') return veTheGhiChu(item);
+
     const co = item.ngayGioBatDau ? new Date(item.ngayGioBatDau) : null;
     const gio = co ? co.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '--:--';
     const ngay = co ? co.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : '';
@@ -545,6 +568,7 @@ function veLog(){
     const trungBadge = item.canhBaoTrung ? `<span class="badge-status warn" title="Trùng giờ với: ${escapeHtml(item.canhBaoTrung)}">⚠️ Trùng giờ</span>` : '';
     const ketQuaBadge = item.ketQua==='HoanThanh' ? `<span class="badge-status" style="color:#5C8368;border-color:#5C8368">✅ Hoàn thành</span>`
                         : item.ketQua==='BoLo' ? `<span class="badge-status warn">❌ Bỏ lỡ</span>` : '';
+    const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
     return `
       <div class="entry" onclick="moModalSua('${item.id}')">
         <div class="entry-time">${gio}<div class="d">${ngay}</div></div>
@@ -557,10 +581,29 @@ function veLog(){
             ${trangThaiBadge}
             ${trungBadge}
             ${ketQuaBadge}
+            ${anhBadge}
           </div>
         </div>
       </div>`;
   }).join('');
+}
+
+function veTheGhiChu(item){
+  const mau = DU_AN_COLOR[item.duAn] || DU_AN_COLOR.Khac;
+  const ngayTao = item.thoiGianTao ? new Date(item.thoiGianTao).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : '';
+  const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
+  return `
+    <div class="entry" onclick="moModalSua('${item.id}')">
+      <div class="entry-time">📝<div class="d">${ngayTao}</div></div>
+      <div class="entry-node" style="background:${mau}"></div>
+      <div class="entry-card">
+        <div class="entry-title">${escapeHtml(item.tieuDe || '(trống)')}</div>
+        <div class="entry-meta">
+          <span class="tag" style="background:${mau}">${DU_AN_LABEL[item.duAn]||'Khác'}</span>
+          ${anhBadge}
+        </div>
+      </div>
+    </div>`;
 }
 
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -574,6 +617,9 @@ function moModalThem(){
   document.getElementById('vanBanAI').value='';
   document.getElementById('btnXoa').style.display='none';
   document.getElementById('ketQuaActions').style.display='none';
+  document.getElementById('khoiThoiGianViec').style.display='block';
+  document.getElementById('labelTieuDe').textContent='Tiêu đề';
+  document.getElementById('khoiAnhDinhKem').style.display='none';
   chonChe('ai');
   document.getElementById('formChiTiet').style.display='none';
   layDataForm(null);
@@ -585,14 +631,26 @@ function moModalSua(id){
   const item = TAT_CA.find(x=>x.id===id);
   if(!item) return;
   DANG_SUA_ID = id;
-  document.getElementById('modalTitle').textContent = item.trangThai==='ChoLamRo' ? 'Bổ sung thông tin' : 'Sửa việc';
-  document.getElementById('modalSub').textContent = item.trangThai==='ChoLamRo'
-    ? 'Việc này AI chưa chắc ngày giờ — anh điền nốt giúp em.'
-    : 'Sửa thông tin rồi lưu lại.';
+  const laGhiChu = item.trangThai==='GhiChu';
+  document.getElementById('modalTitle').textContent = laGhiChu ? '📝 Sửa ghi chú' : (item.trangThai==='ChoLamRo' ? 'Bổ sung thông tin' : 'Sửa việc');
+  document.getElementById('modalSub').textContent = laGhiChu
+    ? 'Ghi chú không có giờ, không lên Calendar, không nhắc.'
+    : (item.trangThai==='ChoLamRo' ? 'Việc này AI chưa chắc ngày giờ — anh điền nốt giúp em.' : 'Sửa thông tin rồi lưu lại.');
   document.getElementById('modeSwitch').style.display='none';
   document.getElementById('formChiTiet').style.display='block';
+  document.getElementById('khoiThoiGianViec').style.display = laGhiChu ? 'none' : 'block';
+  document.getElementById('labelTieuDe').textContent = laGhiChu ? 'Nội dung ghi chú' : 'Tiêu đề';
   document.getElementById('btnXoa').style.display='block';
   document.getElementById('ketQuaActions').style.display = item.trangThai==='DaTao' ? 'flex' : 'none';
+
+  if (item.anhDinhKemId) {
+    document.getElementById('khoiAnhDinhKem').style.display='block';
+    document.getElementById('anhDinhKemImg').src = `https://drive.google.com/thumbnail?id=${item.anhDinhKemId}&sz=w800`;
+    document.getElementById('anhDinhKemLink').href = `https://drive.google.com/file/d/${item.anhDinhKemId}/view`;
+  } else {
+    document.getElementById('khoiAnhDinhKem').style.display='none';
+  }
+
   layDataForm(item);
   veReminderGrid();
   document.getElementById('overlay').classList.add('show');
@@ -673,6 +731,22 @@ function ghepNgayGio(ngay, gio){
 }
 
 async function luuViec(){
+  const banGhiCu = DANG_SUA_ID ? TAT_CA.find(x=>x.id===DANG_SUA_ID) : null;
+
+  if (banGhiCu && banGhiCu.trangThai==='GhiChu') {
+    const noiDung = document.getElementById('fTieuDe').value.trim();
+    if(!noiDung){ alert('Nội dung ghi chú không được để trống.'); return; }
+    const item = {
+      id: DANG_SUA_ID, tieuDe: noiDung,
+      ngayGioBatDau: '', ngayGioKetThuc: '', diaDiem: '',
+      duAn: document.getElementById('fDuAn').value,
+      nhacTruocPhut: [30], calendarEventId: ''
+    };
+    const res = await goiAPI({action:'update', matKhau: matKhau(), item});
+    if(res.ok){ dongModal(); taiDuLieu(); } else { alert('Lỗi lưu: ' + res.error); }
+    return;
+  }
+
   const tieuDe = document.getElementById('fTieuDe').value.trim();
   const ngayGioBatDau = ghepNgayGio(document.getElementById('fNgayBD').value, document.getElementById('fGioBD').value);
   if(!tieuDe || !ngayGioBatDau){ alert('Cần có tiêu đề và ngày giờ bắt đầu.'); return; }
@@ -690,7 +764,6 @@ async function luuViec(){
 
   let res;
   if (DANG_SUA_ID) {
-    const banGhiCu = TAT_CA.find(x=>x.id===DANG_SUA_ID);
     item.id = DANG_SUA_ID;
     item.calendarEventId = banGhiCu?.calendarEventId || '';
     const action = banGhiCu?.trangThai==='ChoLamRo' ? 'confirm' : 'update';
