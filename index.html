@@ -29,6 +29,11 @@
   .login-card h1{font-size:26px;margin:0 0 6px;font-weight:600;}
   .login-card p{color:var(--ink-soft);font-size:14px;margin:0 0 24px;}
   .login-card input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:12px;}
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:44px !important;}
+  .login-card .pw-wrap{margin-bottom:12px;}
+  .login-card .pw-wrap input{margin-bottom:0 !important;}
+  .pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;color:var(--ink-soft);cursor:pointer;padding:6px;line-height:1;}
   .login-card button{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;}
   .login-error{color:var(--urgent);font-size:13px;margin-top:8px;display:none;}
 
@@ -65,6 +70,12 @@
   .qa-btn.active{background:var(--urgent);border-color:var(--urgent);color:#fff;animation:qa-pulse 1.2s infinite;}
   @keyframes qa-pulse{0%,100%{opacity:1}50%{opacity:.55}}
   .quick-add-status{font-size:12.5px;color:var(--accent);margin-top:6px;min-height:0;}
+
+  /* ---------- Ô TÌM KIẾM ---------- */
+  .search-bar{position:relative;margin-bottom:14px;}
+  .search-bar input{width:100%;padding:10px 38px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface);color:var(--ink);}
+  .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6;pointer-events:none;}
+  .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:6px;}
   .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);overflow-x:auto;}
   .tab{padding:9px 14px;font-size:13.5px;border:none;background:none;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;}
   .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
@@ -143,7 +154,10 @@
     <span class="eyebrow">Truy cập riêng tư</span>
     <h1>Nhật ký điều hành</h1>
     <p>Nhập mật khẩu để xem lịch làm việc.</p>
-    <input type="password" id="matKhauInput" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')dangNhap()">
+    <div class="pw-wrap">
+      <input type="password" id="matKhauInput" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')dangNhap()">
+      <button type="button" class="pw-eye" onclick="toggleHienMatKhau('matKhauInput', this)">👁</button>
+    </div>
     <button onclick="dangNhap()">Vào bảng điều khiển</button>
     <div class="login-error" id="loginError">Sai mật khẩu, anh thử lại nhé.</div>
     <div style="text-align:center;margin-top:14px">
@@ -159,7 +173,10 @@
     <div id="guiMaTrangThai" class="hint" style="margin-top:10px;display:none"></div>
     <div style="margin-top:16px">
       <input id="maKhoiPhucInput" placeholder="Nhập mã 6 số từ email">
-      <input type="password" id="matKhauMoiInput" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)">
+      <div class="pw-wrap">
+        <input type="password" id="matKhauMoiInput" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)">
+        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('matKhauMoiInput', this)">👁</button>
+      </div>
       <button onclick="datLaiMatKhau()">Đặt lại mật khẩu</button>
     </div>
     <div class="login-error" id="quenMKError"></div>
@@ -179,6 +196,7 @@
     <div style="display:flex;align-items:center;gap:14px">
       <div class="today mono" id="todayLabel"></div>
       <button onclick="moModalCaiDat()" title="Cài đặt" style="background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:15px;color:var(--ink-soft)">⚙️</button>
+      <button onclick="dangXuat()" title="Đăng xuất" style="background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:15px;color:var(--ink-soft)">🚪</button>
     </div>
   </div>
 
@@ -209,6 +227,12 @@
           <button class="btn btn-primary" style="flex:0 0 auto;padding:9px 18px" onclick="quickAddGui()">Gửi</button>
         </div>
         <div class="quick-add-status" id="quickAddStatus"></div>
+      </div>
+
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="timKiemInput" placeholder="Tìm theo tiêu đề, địa điểm, nội dung..." oninput="veLog()">
+        <button class="search-clear" id="btnXoaTimKiem" onclick="xoaTimKiem()" style="display:none">✕</button>
       </div>
 
       <div class="tabs" id="tabs"></div>
@@ -269,14 +293,12 @@
 
       <div class="field">
         <label>Dự án</label>
-        <select id="fDuAn">
-          <option value="NhaTro">Nhà trọ</option>
-          <option value="BMB">Boom Music Box</option>
-          <option value="TramYTe">Trạm y tế</option>
-          <option value="CongTy">Công ty</option>
-          <option value="CaNhan">Cá nhân</option>
-          <option value="Khac">Khác</option>
-        </select>
+        <select id="fDuAn"></select>
+      </div>
+
+      <div class="field">
+        <label>🔗 Link tài liệu (Drive, v.v. — không bắt buộc)</label>
+        <input id="fLinkTaiLieu" placeholder="https://drive.google.com/...">
       </div>
 
       <div class="modal-actions">
@@ -301,7 +323,10 @@
 
     <div class="field">
       <label>Mật khẩu Dashboard mới</label>
-      <input type="password" id="csMatKhauMoi" placeholder="Để trống nếu không đổi">
+      <div class="pw-wrap">
+        <input type="password" id="csMatKhauMoi" placeholder="Để trống nếu không đổi">
+        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csMatKhauMoi', this)">👁</button>
+      </div>
     </div>
     <div class="field">
       <label>Chat ID Telegram (nhận nhắc)</label>
@@ -313,12 +338,18 @@
     </div>
     <div class="field">
       <label>Token Bot Telegram mới</label>
-      <input type="password" id="csTgTokenMoi" placeholder="Hiện tại: —">
+      <div class="pw-wrap">
+        <input type="password" id="csTgTokenMoi" placeholder="Hiện tại: —">
+        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csTgTokenMoi', this)">👁</button>
+      </div>
       <div class="hint" id="csTgTokenHint" style="margin-top:6px"></div>
     </div>
     <div class="field">
       <label>Claude API Key mới</label>
-      <input type="password" id="csClaudeKeyMoi" placeholder="Hiện tại: —">
+      <div class="pw-wrap">
+        <input type="password" id="csClaudeKeyMoi" placeholder="Hiện tại: —">
+        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csClaudeKeyMoi', this)">👁</button>
+      </div>
       <div class="hint" id="csClaudeKeyHint" style="margin-top:6px"></div>
     </div>
     <div class="field">
@@ -327,9 +358,42 @@
     </div>
     <div class="hint">Đổi Token Bot thì phải chạy lại hàm <b>thietLapWebhookTelegram</b> trong Apps Script để Telegram nhận đúng token mới.</div>
 
+    <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
+      <label>Sao lưu dữ liệu</label>
+      <input id="csBackupFolderId" placeholder="ID thư mục Drive (để trống = tự tạo thư mục mặc định)">
+      <div class="hint" style="margin-top:6px">Mở 1 thư mục Drive bất kỳ, copy đoạn ký tự trong URL sau <code>/folders/</code> — dán vào đây nếu muốn backup vào đúng thư mục đó thay vì thư mục tự tạo.</div>
+      <div id="csLanBackupText" class="hint" style="margin-top:10px;margin-bottom:0"></div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="saoLuuNgay()" id="btnSaoLuuNgay">💾 Sao lưu ngay</button>
+    </div>
+
+    <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
+      <label>Mở khóa nhanh trên thiết bị này</label>
+      <div class="hint">Dùng vân tay/khuôn mặt của điện thoại hoặc máy tính này để mở nhanh, khỏi gõ mật khẩu mỗi lần. Chỉ hoạt động trên đúng thiết bị đã bật — không thay thế mật khẩu chính, chỉ là lớp khoá thêm trước khi tự đăng nhập.</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="dangKySinhTrac()">👆 Bật vân tay/khuôn mặt cho thiết bị này</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="tatSinhTrac()">Tắt mở khóa vân tay trên thiết bị này</button>
+    </div>
+
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="dongModalCaiDat()">Đóng</button>
       <button class="btn btn-primary" onclick="luuCaiDat()">Lưu cài đặt</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL THÊM DỰ ÁN ============ -->
+<div class="overlay" id="overlayThemDuAn" onclick="if(event.target===this) dongModalThemDuAn()">
+  <div class="modal" style="max-width:360px">
+    <button onclick="dongModalThemDuAn()" title="Đóng" style="position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-soft);line-height:1">✕</button>
+    <h2>Thêm dự án mới</h2>
+    <div class="sub">Xuất hiện ngay trong bộ lọc, và AI cũng nhận diện được từ lần nhắn kế tiếp.</div>
+    <div class="field"><label>Tên dự án</label><input id="tdaTen" placeholder="VD: Homestay Đà Lạt"></div>
+    <div class="field">
+      <label>Màu đại diện</label>
+      <input type="color" id="tdaMau" value="#6B5B95" style="width:100%;height:42px;padding:4px;border:1px solid var(--line);border-radius:8px;background:#fff">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="dongModalThemDuAn()">Hủy</button>
+      <button class="btn btn-primary" onclick="luuDuAnMoi()">Thêm dự án</button>
     </div>
   </div>
 </div>
@@ -341,8 +405,10 @@ const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbzWWPx94813Mw6q4n1n4LbAjouJYEmht0hk5-1L34i6hk2g2TdPh72sDsveaq1UYTt_iQ/exec'
 };
 
-const DU_AN_LABEL = {NhaTro:'Nhà trọ', BMB:'Boom Music Box', TramYTe:'Trạm y tế', CongTy:'Công ty', CaNhan:'Cá nhân', Khac:'Khác'};
-const DU_AN_COLOR = {NhaTro:'var(--r-nhatro)', BMB:'var(--r-bmb)', TramYTe:'var(--r-ytế)', CongTy:'var(--r-congty)', CaNhan:'var(--r-canhan)', Khac:'var(--r-khac)'};
+let DU_AN_LABEL = {};
+let DU_AN_COLOR = {};
+let DANH_SACH_DU_AN = [];
+const MAU_MAC_DINH_DU_AN = ['#5C8368','#A8384A','#3A6EA5','#8B6D3F','#6B5B95','#8A8A85','#2B6CB0','#B7791F','#9B2C6F','#276749'];
 const REMINDER_PRESETS = [{l:'15 phút',v:15},{l:'30 phút',v:30},{l:'1 tiếng',v:60},{l:'2 tiếng',v:120},{l:'1 ngày',v:1440},{l:'1 tuần',v:10080}];
 
 let TAT_CA = [];
@@ -350,12 +416,33 @@ let TAB_HIEN_TAI = 'homnay';
 let DU_AN_LOC = 'Tat';
 let CHON_NHAC = new Set([30]);
 let DANG_SUA_ID = null;
+const HO_TRO_SINH_TRAC = !!(window.PublicKeyCredential);
 
 /* ================== ĐĂNG NHẬP ================== */
-window.onload = function(){
-  const mk = localStorage.getItem('nhacLich_matKhau');
-  if (mk) thuDangNhap(mk);
+window.onload = async function(){
   document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('vi-VN', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'});
+
+  const phienDaXacThuc = sessionStorage.getItem('nhacLich_phienDaXacThuc');
+  const mk = localStorage.getItem('nhacLich_matKhau');
+  if (!mk) return; // chưa từng đăng nhập trên thiết bị này, để màn đăng nhập trống
+
+  if (phienDaXacThuc) {
+    // Vẫn đang trong cùng phiên trình duyệt hiện tại (vd: mới F5/refresh lại trang) -> vào thẳng, khỏi hỏi lại
+    thuDangNhap(mk);
+    return;
+  }
+
+  // Phiên mới (trình duyệt/tab vừa đóng rồi mở lại) -> BẮT BUỘC xác thực lại, không tự động vào thẳng nữa
+  const sinhTracId = localStorage.getItem('nhacLich_sinhTracId');
+  if (sinhTracId && HO_TRO_SINH_TRAC) {
+    const oke = await moKhoaBangSinhTrac(sinhTracId);
+    if (oke) { thuDangNhap(mk); return; }
+    // sinh trắc thất bại/hủy -> rơi xuống dưới, điền sẵn mật khẩu chờ bấm tay
+  }
+
+  // Không có sinh trắc, hoặc sinh trắc vừa thất bại -> điền sẵn mật khẩu cho đỡ gõ lại,
+  // nhưng vẫn cần bấm nút mới vào (không tự động), đúng nghĩa "đã đăng xuất" sau khi thoát trang.
+  document.getElementById('matKhauInput').value = mk;
 };
 
 function dangNhap(){
@@ -368,8 +455,10 @@ async function thuDangNhap(mk){
     const res = await goiAPI({action:'login', matKhau: mk});
     if (res.ok) {
       localStorage.setItem('nhacLich_matKhau', mk);
+      sessionStorage.setItem('nhacLich_phienDaXacThuc', '1');
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
+      await taiDanhSachDuAn();
       taiDuLieu();
     } else {
       document.getElementById('loginError').style.display='block';
@@ -378,6 +467,66 @@ async function thuDangNhap(mk){
     document.getElementById('loginError').textContent = 'Không kết nối được server: ' + e.message;
     document.getElementById('loginError').style.display='block';
   }
+}
+
+function dangXuat(){
+  if(!confirm('Đăng xuất khỏi thiết bị này? Lần mở tiếp theo sẽ cần đăng nhập lại (vân tay/khuôn mặt nếu đã bật, hoặc gõ mật khẩu).')) return;
+  sessionStorage.removeItem('nhacLich_phienDaXacThuc');
+  localStorage.removeItem('nhacLich_matKhau');
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='';
+  document.getElementById('matKhauInput').value='';
+  document.getElementById('loginError').style.display='none';
+}
+
+/* ---- Sinh trắc học (vân tay / khuôn mặt) — chỉ là lớp khoá cục bộ trên thiết bị này ---- */
+async function dangKySinhTrac(){
+  if(!HO_TRO_SINH_TRAC){ alert('Trình duyệt này chưa hỗ trợ vân tay/khuôn mặt.'); return; }
+  try{
+    const thachThuc = new Uint8Array(32);
+    crypto.getRandomValues(thachThuc);
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: thachThuc,
+        rp: { name: 'Lich Lam Viec AI' },
+        user: { id: new TextEncoder().encode('hung-dashboard-user'), name: 'anh Hưng', displayName: 'anh Hưng' },
+        pubKeyCredParams: [{alg:-7, type:'public-key'}, {alg:-257, type:'public-key'}],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000
+      }
+    });
+    const idB64 = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+    localStorage.setItem('nhacLich_sinhTracId', idB64);
+    alert('✅ Đã bật mở khóa vân tay/khuôn mặt cho thiết bị này.');
+  } catch(e){
+    alert('Không bật được: ' + e.message);
+  }
+}
+
+async function moKhoaBangSinhTrac(idB64){
+  try{
+    const raw = Uint8Array.from(atob(idB64), c=>c.charCodeAt(0));
+    const thachThuc = new Uint8Array(32);
+    crypto.getRandomValues(thachThuc);
+    await navigator.credentials.get({
+      publicKey: { challenge: thachThuc, allowCredentials: [{ id: raw, type: 'public-key' }], userVerification: 'required', timeout: 60000 }
+    });
+    return true;
+  } catch(e){
+    return false;
+  }
+}
+
+function tatSinhTrac(){
+  localStorage.removeItem('nhacLich_sinhTracId');
+  alert('Đã tắt mở khóa vân tay/khuôn mặt trên thiết bị này.');
+}
+
+/* ---- Hiện/ẩn mật khẩu ---- */
+function toggleHienMatKhau(idInput, btn){
+  const el = document.getElementById(idInput);
+  if(el.type === 'password'){ el.type = 'text'; btn.textContent = '🙈'; }
+  else { el.type = 'password'; btn.textContent = '👁'; }
 }
 
 /* ---- Quên mật khẩu ---- */
@@ -434,6 +583,21 @@ async function goiAPI(payload){
   return await res.json();
 }
 
+async function taiDanhSachDuAn(){
+  const res = await goiAPI({action:'layDuAn', matKhau: matKhau()});
+  if(res.ok){
+    DANH_SACH_DU_AN = res.data;
+    DU_AN_LABEL = {}; DU_AN_COLOR = {};
+    DANH_SACH_DU_AN.forEach(d=>{ DU_AN_LABEL[d.id]=d.ten; DU_AN_COLOR[d.id]=d.mau; });
+    veTuyChonDuAn();
+  }
+}
+
+function veTuyChonDuAn(){
+  const sel = document.getElementById('fDuAn');
+  if(sel) sel.innerHTML = DANH_SACH_DU_AN.map(d=>`<option value="${d.id}">${escapeHtml(d.ten)}</option>`).join('');
+}
+
 async function taiDuLieu(){
   const res = await goiAPI({action:'list', matKhau: matKhau()});
   if (res.ok) { TAT_CA = res.data; ve(); }
@@ -451,17 +615,23 @@ function veSidebar(){
   const demTheoDuAn = {};
   listHienTai.forEach(x=>{ demTheoDuAn[x.duAn] = (demTheoDuAn[x.duAn]||0) + 1; });
 
-  const projects = ['Tat','NhaTro','BMB','TramYTe','CongTy','CaNhan','Khac'];
-  const chipsHtml = projects.map(p => {
-    const label = p==='Tat' ? 'Tất cả dự án' : DU_AN_LABEL[p];
-    const color = p==='Tat' ? 'var(--ink-soft)' : DU_AN_COLOR[p];
-    const dem = p==='Tat' ? listHienTai.length : (demTheoDuAn[p]||0);
+  const tatCaChip = (()=>{
+    const dem = listHienTai.length;
+    const dotHtml = dem>0 ? `<span class="dot-so" style="background:var(--ink-soft)">${dem}</span>` : `<span class="dot" style="background:var(--ink-soft)"></span>`;
+    return `<button class="chip ${DU_AN_LOC==='Tat'?'active':''}" onclick="locDuAn('Tat')">${dotHtml}Tất cả dự án</button>`;
+  })();
+
+  const chipsDuAn = DANH_SACH_DU_AN.map(d => {
+    const dem = demTheoDuAn[d.id]||0;
     const dotHtml = dem>0
-      ? `<span class="dot-so" style="background:${color}">${dem}</span>`
-      : `<span class="dot" style="background:${color}"></span>`;
-    return `<button class="chip ${DU_AN_LOC===p?'active':''}" onclick="locDuAn('${p}')">${dotHtml}${label}</button>`;
+      ? `<span class="dot-so" style="background:${d.mau}">${dem}</span>`
+      : `<span class="dot" style="background:${d.mau}"></span>`;
+    return `<button class="chip ${DU_AN_LOC===d.id?'active':''}" onclick="locDuAn('${d.id}')">${dotHtml}${escapeHtml(d.ten)}</button>`;
   }).join('');
 
+  const nutThem = `<button class="chip" onclick="moModalThemDuAn()" style="color:var(--accent)">➕ Thêm dự án</button>`;
+
+  const chipsHtml = tatCaChip + chipsDuAn + nutThem;
   document.getElementById('projectChips').innerHTML = chipsHtml;
   document.getElementById('projectChipsMobile').innerHTML = chipsHtml;
 
@@ -569,6 +739,7 @@ function veLog(){
     const ketQuaBadge = item.ketQua==='HoanThanh' ? `<span class="badge-status" style="color:#5C8368;border-color:#5C8368">✅ Hoàn thành</span>`
                         : item.ketQua==='BoLo' ? `<span class="badge-status warn">❌ Bỏ lỡ</span>` : '';
     const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
+    const linkBadge = item.linkTaiLieu ? `<a href="${escapeHtml(item.linkTaiLieu)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">🔗 Tài liệu</a>` : '';
     return `
       <div class="entry" onclick="moModalSua('${item.id}')">
         <div class="entry-time">${gio}<div class="d">${ngay}</div></div>
@@ -582,6 +753,7 @@ function veLog(){
             ${trungBadge}
             ${ketQuaBadge}
             ${anhBadge}
+            ${linkBadge}
           </div>
         </div>
       </div>`;
@@ -592,6 +764,7 @@ function veTheGhiChu(item){
   const mau = DU_AN_COLOR[item.duAn] || DU_AN_COLOR.Khac;
   const ngayTao = item.thoiGianTao ? new Date(item.thoiGianTao).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : '';
   const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
+  const linkBadge = item.linkTaiLieu ? `<a href="${escapeHtml(item.linkTaiLieu)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">🔗 Tài liệu</a>` : '';
   return `
     <div class="entry" onclick="moModalSua('${item.id}')">
       <div class="entry-time">📝<div class="d">${ngayTao}</div></div>
@@ -601,6 +774,7 @@ function veTheGhiChu(item){
         <div class="entry-meta">
           <span class="tag" style="background:${mau}">${DU_AN_LABEL[item.duAn]||'Khác'}</span>
           ${anhBadge}
+          ${linkBadge}
         </div>
       </div>
     </div>`;
@@ -681,6 +855,7 @@ function layDataForm(item){
   document.getElementById('fGioKT').value = kt ? toTimeStr(kt) : '';
   document.getElementById('fDiaDiem').value = item?.diaDiem || '';
   document.getElementById('fDuAn').value = item?.duAn || 'CaNhan';
+  document.getElementById('fLinkTaiLieu').value = item?.linkTaiLieu || '';
   CHON_NHAC = new Set(item?.nhacTruocPhut ? String(item.nhacTruocPhut).split(',').map(Number) : [30]);
 }
 
@@ -740,6 +915,7 @@ async function luuViec(){
       id: DANG_SUA_ID, tieuDe: noiDung,
       ngayGioBatDau: '', ngayGioKetThuc: '', diaDiem: '',
       duAn: document.getElementById('fDuAn').value,
+      linkTaiLieu: document.getElementById('fLinkTaiLieu').value.trim(),
       nhacTruocPhut: [30], calendarEventId: ''
     };
     const res = await goiAPI({action:'update', matKhau: matKhau(), item});
@@ -759,6 +935,7 @@ async function luuViec(){
     tieuDe, ngayGioBatDau, ngayGioKetThuc,
     diaDiem: document.getElementById('fDiaDiem').value.trim(),
     duAn: document.getElementById('fDuAn').value,
+    linkTaiLieu: document.getElementById('fLinkTaiLieu').value.trim(),
     nhacTruocPhut: Array.from(CHON_NHAC)
   };
 
@@ -805,11 +982,61 @@ async function moModalCaiDat(){
     document.getElementById('csRecoveryEmail').value = res.data.recoveryEmail || '';
     document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
     document.getElementById('csClaudeKeyMoi').placeholder = 'Hiện tại: ' + res.data.claudeKeyMask;
+    document.getElementById('csBackupFolderId').value = res.data.backupFolderId || '';
+    hienThiLanBackup(res.data.lanBackupGanNhat);
   }
   document.getElementById('overlayCaiDat').classList.add('show');
 }
 
+function hienThiLanBackup(isoString){
+  const el = document.getElementById('csLanBackupText');
+  if(!isoString){ el.textContent = 'Chưa có lần sao lưu nào.'; return; }
+  const d = new Date(isoString);
+  el.textContent = 'Lần sao lưu gần nhất: ' + d.toLocaleString('vi-VN');
+}
+
+async function saoLuuNgay(){
+  const btn = document.getElementById('btnSaoLuuNgay');
+  btn.disabled = true; btn.textContent = '⏳ Đang sao lưu…';
+  try{
+    const res = await goiAPI({action:'saoLuuNgay', matKhau: matKhau()});
+    if(res.ok){
+      hienThiLanBackup(res.lanBackupGanNhat);
+      alert('✅ Đã sao lưu xong.');
+    } else {
+      alert('⚠️ Sao lưu lỗi: ' + res.error);
+    }
+  } catch(e){
+    alert('⚠️ Lỗi kết nối: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = '💾 Sao lưu ngay';
+}
+
 function dongModalCaiDat(){ document.getElementById('overlayCaiDat').classList.remove('show'); }
+
+/* ---- Thêm dự án mới ---- */
+function moModalThemDuAn(){
+  document.getElementById('tdaTen').value='';
+  const mauGoiY = MAU_MAC_DINH_DU_AN[DANH_SACH_DU_AN.length % MAU_MAC_DINH_DU_AN.length];
+  document.getElementById('tdaMau').value = mauGoiY;
+  document.getElementById('overlayThemDuAn').classList.add('show');
+}
+
+function dongModalThemDuAn(){ document.getElementById('overlayThemDuAn').classList.remove('show'); }
+
+async function luuDuAnMoi(){
+  const ten = document.getElementById('tdaTen').value.trim();
+  if(!ten){ alert('Nhập tên dự án.'); return; }
+  const mau = document.getElementById('tdaMau').value;
+  const res = await goiAPI({action:'themDuAn', matKhau: matKhau(), ten, mau});
+  if(res.ok){
+    dongModalThemDuAn();
+    await taiDanhSachDuAn();
+    ve();
+  } else {
+    alert('Lỗi: ' + res.error);
+  }
+}
 
 async function luuCaiDat(){
   const matKhauMoi = document.getElementById('csMatKhauMoi').value;
@@ -819,6 +1046,7 @@ async function luuCaiDat(){
     recoveryEmail: document.getElementById('csRecoveryEmail').value.trim(),
     tgTokenMoi: document.getElementById('csTgTokenMoi').value.trim(),
     claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
+    backupFolderId: document.getElementById('csBackupFolderId').value.trim(),
     matKhauMoi: matKhauMoi
   };
   const res = await goiAPI({action:'luuCaiDat', matKhau: matKhau(), caiDat});
