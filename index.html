@@ -2,8 +2,23 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nhật Ký Điều Hành — Lịch Làm Việc</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lịch Hưng</title>
+
+<!-- ==== PWA: cài được như app trên Android/iOS ==== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" sizes="32x32" href="pwa-icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="pwa-icons/favicon-16.png">
+<!-- Android (Chrome) -->
+<link rel="icon" type="image/png" sizes="192x192" href="pwa-icons/icon-192.png">
+<!-- iOS (Safari) -->
+<link rel="apple-touch-icon" href="pwa-icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lịch Hưng">
+<!-- =============================================== -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -33,7 +48,7 @@
   .pw-wrap input{padding-right:44px !important;}
   .login-card .pw-wrap{margin-bottom:12px;}
   .login-card .pw-wrap input{margin-bottom:0 !important;}
-  .pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;color:var(--ink-soft);cursor:pointer;padding:6px;line-height:1;}
+  .pw-wrap .pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;height:auto;background:none;border:none;border-radius:0;font-size:16px;font-weight:400;color:var(--ink-soft);cursor:pointer;padding:6px;line-height:1;}
   .login-card button{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;}
   .login-error{color:var(--urgent);font-size:13px;margin-top:8px;display:none;}
 
@@ -69,7 +84,7 @@
   .qa-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:none;font-size:16px;color:var(--ink-soft);}
   .qa-btn.active{background:var(--urgent);border-color:var(--urgent);color:#fff;animation:qa-pulse 1.2s infinite;}
   @keyframes qa-pulse{0%,100%{opacity:1}50%{opacity:.55}}
-  .quick-add-status{font-size:12.5px;color:var(--accent);margin-top:6px;min-height:0;}
+  .quick-add-status{font-size:12.5px;color:var(--accent);margin-top:6px;min-height:0;white-space:pre-line;}
 
   /* ---------- Ô TÌM KIẾM ---------- */
   .search-bar{position:relative;margin-bottom:14px;}
@@ -419,6 +434,10 @@ let DANG_SUA_ID = null;
 const HO_TRO_SINH_TRAC = !!(window.PublicKeyCredential);
 
 /* ================== ĐĂNG NHẬP ================== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+
 window.onload = async function(){
   document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('vi-VN', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'});
 
@@ -713,6 +732,16 @@ function veLog(){
   let list = layDanhSachTheoTab();
   if (DU_AN_LOC!=='Tat') list = list.filter(x=>x.duAn===DU_AN_LOC);
 
+  const tuKhoa = (document.getElementById('timKiemInput').value || '').trim().toLowerCase();
+  document.getElementById('btnXoaTimKiem').style.display = tuKhoa ? 'block' : 'none';
+  if (tuKhoa) {
+    list = list.filter(x =>
+      (x.tieuDe||'').toLowerCase().includes(tuKhoa) ||
+      (x.noiDungGoc||'').toLowerCase().includes(tuKhoa) ||
+      (x.diaDiem||'').toLowerCase().includes(tuKhoa)
+    );
+  }
+
   if (TAB_HIEN_TAI==='ghichu') {
     list.sort((a,b)=> new Date(b.thoiGianTao) - new Date(a.thoiGianTao)); // ghi chú: mới nhất lên đầu
   } else {
@@ -721,7 +750,10 @@ function veLog(){
 
   const el = document.getElementById('log');
   if (!list.length) {
-    el.innerHTML = `<div class="empty">${TAB_HIEN_TAI==='ghichu' ? 'Chưa có ghi chú nào. Nhắn "ghi chú: ..." qua Telegram hoặc ô nhập nhanh phía trên.' : 'Chưa có việc nào ở đây. Bấm nút + để thêm.'}</div>`;
+    const thongBaoRong = tuKhoa
+      ? `Không tìm thấy việc nào khớp với "${escapeHtml(tuKhoa)}".`
+      : (TAB_HIEN_TAI==='ghichu' ? 'Chưa có ghi chú nào. Nhắn "ghi chú: ..." qua Telegram hoặc ô nhập nhanh phía trên.' : 'Chưa có việc nào ở đây. Bấm nút + để thêm.');
+    el.innerHTML = `<div class="empty">${thongBaoRong}</div>`;
     return;
   }
 
@@ -781,6 +813,11 @@ function veTheGhiChu(item){
 }
 
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function xoaTimKiem(){
+  document.getElementById('timKiemInput').value = '';
+  veLog();
+}
 
 /* ================== MODAL THÊM / SỬA ================== */
 function moModalThem(){
@@ -1138,10 +1175,10 @@ async function quickAddGui(){
     if(QUICK_ADD_ANH_BASE64) payload.anhBase64 = QUICK_ADD_ANH_BASE64;
     const res = await goiAPI(payload);
     if(res.ok){
-      status.textContent = '✅ Đã xử lý xong, xem trong danh sách bên dưới (và Telegram cũng đã được báo).';
       document.getElementById('quickAddText').value = '';
       quickAddXoaAnh();
       taiDuLieu();
+      status.textContent = res.traLoi ? res.traLoi : '✅ Đã xử lý xong, xem trong danh sách bên dưới (và Telegram cũng đã được báo).';
     } else {
       status.textContent = '⚠️ Lỗi: ' + res.error;
     }
