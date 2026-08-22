@@ -938,8 +938,18 @@ function moModalSua(id){
 
 async function danhDauKetQua(ketQua){
   if(!DANG_SUA_ID) return;
+  const idx = TAT_CA.findIndex(x=>x.id===DANG_SUA_ID);
+  const backup = idx>=0 ? {...TAT_CA[idx]} : null;
+  if (idx>=0) TAT_CA[idx] = {...TAT_CA[idx], ketQua};
+  dongModal();
+  ve();
+
   const res = await goiAPI({action:'danhDauKetQua', matKhau: matKhau(), id: DANG_SUA_ID, ketQua});
-  if(res.ok){ dongModal(); taiDuLieu(); } else { alert('Lỗi: ' + res.error); }
+  if(!res.ok){
+    if (idx>=0 && backup) TAT_CA[idx] = backup;
+    ve();
+    alert('⚠️ Lỗi: ' + res.error + ' — đã hoàn tác thay đổi.');
+  }
 }
 
 function dongModal(){ document.getElementById('overlay').classList.remove('show'); }
@@ -1017,15 +1027,27 @@ async function luuViec(){
   if (banGhiCu && banGhiCu.trangThai==='GhiChu') {
     const noiDung = document.getElementById('fTieuDe').value.trim();
     if(!noiDung){ alert('Nội dung ghi chú không được để trống.'); return; }
+    const duAnMoi = document.getElementById('fDuAn').value;
+    const linkMoi = document.getElementById('fLinkTaiLieu').value.trim();
     const item = {
       id: DANG_SUA_ID, tieuDe: noiDung,
       ngayGioBatDau: '', ngayGioKetThuc: '', diaDiem: '',
-      duAn: document.getElementById('fDuAn').value,
-      linkTaiLieu: document.getElementById('fLinkTaiLieu').value.trim(),
+      duAn: duAnMoi, linkTaiLieu: linkMoi,
       nhacTruocPhut: [30], calendarEventId: ''
     };
+
+    const idx = TAT_CA.findIndex(x=>x.id===DANG_SUA_ID);
+    const backup = idx>=0 ? {...TAT_CA[idx]} : null;
+    if (idx>=0) TAT_CA[idx] = {...TAT_CA[idx], tieuDe: noiDung, duAn: duAnMoi, linkTaiLieu: linkMoi};
+    dongModal();
+    ve();
+
     const res = await goiAPI({action:'update', matKhau: matKhau(), item});
-    if(res.ok){ dongModal(); taiDuLieu(); } else { alert('Lỗi lưu: ' + res.error); }
+    if(!res.ok){
+      if (idx>=0 && backup) TAT_CA[idx] = backup;
+      ve();
+      alert('⚠️ Lỗi lưu: ' + res.error + ' — đã hoàn tác.');
+    }
     return;
   }
 
@@ -1045,35 +1067,56 @@ async function luuViec(){
     nhacTruocPhut: Array.from(CHON_NHAC)
   };
 
-  let res;
   if (DANG_SUA_ID) {
+    // Sửa việc đã có trên danh sách -> cập nhật giao diện ngay, đóng modal liền, gọi API chạy nền phía sau
     item.id = DANG_SUA_ID;
     item.calendarEventId = banGhiCu?.calendarEventId || '';
     const action = banGhiCu?.trangThai==='ChoLamRo' ? 'confirm' : 'update';
-    res = await goiAPI({action, matKhau: matKhau(), item});
-  } else {
-    res = await goiAPI({action:'save', matKhau: matKhau(), item});
-  }
-
-  if(res.ok){
+    const idx = TAT_CA.findIndex(x=>x.id===DANG_SUA_ID);
+    const backup = idx>=0 ? {...TAT_CA[idx]} : null;
+    if (idx>=0) TAT_CA[idx] = {...TAT_CA[idx], ...item, trangThai:'DaTao'};
     dongModal();
-    taiDuLieu();
-    if (res.canhBaoTrung) setTimeout(()=>alert('⚠️ Lịch này trùng giờ với: ' + res.canhBaoTrung), 300);
+    ve();
+
+    const res = await goiAPI({action, matKhau: matKhau(), item});
+    if(res.ok){
+      if (res.canhBaoTrung) setTimeout(()=>alert('⚠️ Lịch này trùng giờ với: ' + res.canhBaoTrung), 300);
+    } else {
+      if (idx>=0 && backup) TAT_CA[idx] = backup;
+      ve();
+      alert('⚠️ Lỗi lưu: ' + res.error + ' — đã hoàn tác.');
+    }
   } else {
-    alert('Lỗi lưu: ' + res.error);
+    // Thêm mới -> chưa có ID thật để cập nhật lạc quan an toàn, nên đóng modal ngay cho nhẹ nhàng,
+    // việc mới sẽ hiện ra ngay sau khi server xác nhận xong (thường rất nhanh sau khi đã không phải đợi đóng modal).
+    dongModal();
+    const res = await goiAPI({action:'save', matKhau: matKhau(), item});
+    if(res.ok){
+      taiDuLieu();
+      if (res.canhBaoTrung) setTimeout(()=>alert('⚠️ Lịch này trùng giờ với: ' + res.canhBaoTrung), 300);
+    } else {
+      alert('⚠️ Lỗi lưu: ' + res.error);
+    }
   }
 }
 
 async function xoaViecHienTai(){
   if(!DANG_SUA_ID) return;
   if(!confirm('Xóa việc này khỏi lịch?')) return;
+
+  const idx = TAT_CA.findIndex(x=>x.id===DANG_SUA_ID);
+  const backup = idx>=0 ? TAT_CA[idx] : null;
+  if (idx>=0) TAT_CA.splice(idx, 1);
+  dongModal();
+  ve();
+
   const res = await goiAPI({action:'delete', matKhau: matKhau(), id: DANG_SUA_ID});
   if(res.ok){
-    dongModal();
-    taiDuLieu();
     if(res.canhBaoCalendar) setTimeout(()=>alert('⚠️ Đã xóa trong hệ thống, nhưng xóa trên Calendar bị lỗi: ' + res.canhBaoCalendar + '\nAnh kiểm tra và xóa tay trên Google Calendar giúp.'), 300);
   } else {
-    alert('Lỗi xóa: ' + res.error);
+    if (backup) TAT_CA.splice(idx, 0, backup);
+    ve();
+    alert('⚠️ Lỗi xóa: ' + res.error + ' — đã hoàn tác.');
   }
 }
 /* ================== CÀI ĐẶT ================== */
