@@ -174,6 +174,7 @@
       <button type="button" class="pw-eye" onclick="toggleHienMatKhau('matKhauInput', this)">👁</button>
     </div>
     <button onclick="dangNhap()">Vào bảng điều khiển</button>
+    <button onclick="moBangSinhTracThuCong()" style="margin-top:10px;background:none;border:1px solid var(--line);color:var(--ink)">👆 Mở bằng vân tay / khuôn mặt</button>
     <div class="login-error" id="loginError">Sai mật khẩu, anh thử lại nhé.</div>
     <div style="text-align:center;margin-top:14px">
       <a href="#" onclick="moQuenMatKhau();return false" style="font-size:13px;color:var(--ink-soft)">Quên mật khẩu?</a>
@@ -319,7 +320,7 @@
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="dongModal()">Hủy</button>
         <button class="btn btn-danger" id="btnXoa" style="display:none" onclick="xoaViecHienTai()">Xóa</button>
-        <button class="btn btn-primary" onclick="luuViec()">Lưu vào lịch</button>
+        <button class="btn btn-primary" id="btnLuuViec" onclick="luuViec()">Lưu vào lịch</button>
       </div>
       <div class="modal-actions" id="ketQuaActions" style="display:none">
         <button class="btn btn-ghost" onclick="danhDauKetQua('HoanThanh')">✅ Đánh dấu xong</button>
@@ -510,7 +511,11 @@ function moViecTuLinkSau(){
 function dangXuat(){
   if(!confirm('Đăng xuất khỏi thiết bị này? Lần mở tiếp theo sẽ cần đăng nhập lại (vân tay/khuôn mặt nếu đã bật, hoặc gõ mật khẩu).')) return;
   sessionStorage.removeItem('nhacLich_phienDaXacThuc');
-  localStorage.removeItem('nhacLich_matKhau');
+  const coSinhTrac = !!localStorage.getItem('nhacLich_sinhTracId');
+  if (!coSinhTrac) {
+    localStorage.removeItem('nhacLich_matKhau'); // chưa bật vân tay thì đăng xuất mới xóa hẳn mật khẩu, bắt gõ lại
+  }
+  // Có vân tay rồi thì GIỮ mật khẩu đã lưu — vân tay cần nó để tự điền sau khi xác thực xong lần sau
   document.getElementById('app').style.display='none';
   document.getElementById('loginScreen').style.display='';
   document.getElementById('matKhauInput').value='';
@@ -552,6 +557,29 @@ async function moKhoaBangSinhTrac(idB64){
     return true;
   } catch(e){
     return false;
+  }
+}
+
+async function moBangSinhTracThuCong(){
+  if (!HO_TRO_SINH_TRAC) {
+    alert('⚠️ Trình duyệt này chưa hỗ trợ vân tay/khuôn mặt. Anh đăng nhập bằng mật khẩu giúp em nhé.');
+    return;
+  }
+  const sinhTracId = localStorage.getItem('nhacLich_sinhTracId');
+  if (!sinhTracId) {
+    alert('⚠️ Chưa bật vân tay/khuôn mặt cho thiết bị này. Đăng nhập bằng mật khẩu trước, rồi vào ⚙️ Cài đặt → "Bật vân tay/khuôn mặt cho thiết bị này" nhé anh.');
+    return;
+  }
+  const mk = localStorage.getItem('nhacLich_matKhau');
+  if (!mk) {
+    alert('⚠️ Chưa có mật khẩu lưu sẵn trên thiết bị này để dùng cùng vân tay. Anh đăng nhập bằng mật khẩu 1 lần trước nhé.');
+    return;
+  }
+  const oke = await moKhoaBangSinhTrac(sinhTracId);
+  if (oke) {
+    thuDangNhap(mk);
+  } else {
+    alert('⚠️ Xác thực vân tay/khuôn mặt không thành công. Anh thử lại, hoặc đăng nhập bằng mật khẩu.');
   }
 }
 
@@ -686,6 +714,8 @@ function veSidebar(){
 function locDuAn(p){ DU_AN_LOC = p; ve(); }
 
 function demTheoTab(tabId){
+  if (tabId==='lichsu') return TAT_CA.filter(x => x.trangThai==='DaHuy' || x.ketQua==='HoanThanh' || x.ketQua==='BoLo').length;
+
   let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
   if (tabId==='cholamro') return list.filter(x=>x.trangThai==='ChoLamRo').length;
   if (tabId==='ghichu') return list.filter(x=>x.trangThai==='GhiChu').length;
@@ -697,7 +727,7 @@ function demTheoTab(tabId){
     const end = new Date(start); end.setDate(end.getDate()+7);
     return list.filter(x=>{ const d = new Date(x.ngayGioBatDau); return d>=start && d<end; }).length;
   }
-  return list.length; // tatca
+  return list.filter(x=>x.ketQua!=='HoanThanh' && x.ketQua!=='BoLo').length; // tatca: chỉ đếm việc chưa chốt
 }
 
 function veTabs(){
@@ -706,7 +736,8 @@ function veTabs(){
     {id:'tuannay', label:'Tuần này'},
     {id:'tatca', label:'Tất cả'},
     {id:'cholamro', label:'Chờ làm rõ', urgent:true},
-    {id:'ghichu', label:'📝 Ghi chú'}
+    {id:'ghichu', label:'📝 Ghi chú'},
+    {id:'lichsu', label:'🗂️ Lịch sử'}
   ];
   document.getElementById('tabs').innerHTML = tabs.map(t=>{
     const dem = demTheoTab(t.id);
@@ -728,11 +759,17 @@ function locTheoNgay(list, taiSoNgayTuHomNay){
 }
 
 function layDanhSachTheoTab(){
+  if (TAB_HIEN_TAI==='lichsu') {
+    return TAT_CA.filter(x => x.trangThai==='DaHuy' || x.ketQua==='HoanThanh' || x.ketQua==='BoLo');
+  }
+
   let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
   if (TAB_HIEN_TAI==='cholamro') {
     list = list.filter(x=>x.trangThai==='ChoLamRo');
   } else if (TAB_HIEN_TAI==='ghichu') {
     list = list.filter(x=>x.trangThai==='GhiChu');
+  } else if (TAB_HIEN_TAI==='tatca') {
+    list = list.filter(x=>x.trangThai==='DaTao' && x.ketQua!=='HoanThanh' && x.ketQua!=='BoLo');
   } else {
     list = list.filter(x=>x.trangThai==='DaTao');
     const now = new Date();
@@ -761,17 +798,18 @@ function veLog(){
     );
   }
 
-  if (TAB_HIEN_TAI==='ghichu') {
-    list.sort((a,b)=> new Date(b.thoiGianTao) - new Date(a.thoiGianTao)); // ghi chú: mới nhất lên đầu
+  if (TAB_HIEN_TAI==='ghichu' || TAB_HIEN_TAI==='lichsu') {
+    list.sort((a,b)=> new Date(b.ngayGioBatDau||b.thoiGianTao) - new Date(a.ngayGioBatDau||a.thoiGianTao)); // mới nhất lên đầu
   } else {
     list.sort((a,b)=> new Date(a.ngayGioBatDau||a.thoiGianTao) - new Date(b.ngayGioBatDau||b.thoiGianTao));
   }
 
   const el = document.getElementById('log');
   if (!list.length) {
-    const thongBaoRong = tuKhoa
-      ? `Không tìm thấy việc nào khớp với "${escapeHtml(tuKhoa)}".`
-      : (TAB_HIEN_TAI==='ghichu' ? 'Chưa có ghi chú nào. Nhắn "ghi chú: ..." qua Telegram hoặc ô nhập nhanh phía trên.' : 'Chưa có việc nào ở đây. Bấm nút + để thêm.');
+    let thongBaoRong = 'Chưa có việc nào ở đây. Bấm nút + để thêm.';
+    if (tuKhoa) thongBaoRong = `Không tìm thấy việc nào khớp với "${escapeHtml(tuKhoa)}".`;
+    else if (TAB_HIEN_TAI==='ghichu') thongBaoRong = 'Chưa có ghi chú nào. Nhắn "ghi chú: ..." qua Telegram hoặc ô nhập nhanh phía trên.';
+    else if (TAB_HIEN_TAI==='lichsu') thongBaoRong = 'Chưa có việc nào đã hoàn thành/bỏ lỡ/hủy trong 90 ngày gần đây.';
     el.innerHTML = `<div class="empty">${thongBaoRong}</div>`;
     return;
   }
@@ -783,12 +821,8 @@ function veLog(){
     const gio = co ? co.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '--:--';
     const ngay = co ? co.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : '';
     const mau = DU_AN_COLOR[item.duAn] || DU_AN_COLOR.Khac;
-    const trangThaiBadge = item.trangThai==='ChoLamRo'
-      ? `<span class="badge-status warn">Chờ làm rõ</span>`
-      : `<span class="badge-status">Đã lên lịch</span>`;
+    const trangThaiBadge = veNhanTrangThai(item);
     const trungBadge = item.canhBaoTrung ? `<span class="badge-status warn" title="Trùng giờ với: ${escapeHtml(item.canhBaoTrung)}">⚠️ Trùng giờ</span>` : '';
-    const ketQuaBadge = item.ketQua==='HoanThanh' ? `<span class="badge-status" style="color:#5C8368;border-color:#5C8368">✅ Hoàn thành</span>`
-                        : item.ketQua==='BoLo' ? `<span class="badge-status warn">❌ Bỏ lỡ</span>` : '';
     const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
     const linkBadge = item.linkTaiLieu ? `<a href="${escapeHtml(item.linkTaiLieu)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">🔗 Tài liệu</a>` : '';
     return `
@@ -802,13 +836,20 @@ function veLog(){
             ${item.diaDiem?`<span>📍 ${escapeHtml(item.diaDiem)}</span>`:''}
             ${trangThaiBadge}
             ${trungBadge}
-            ${ketQuaBadge}
             ${anhBadge}
             ${linkBadge}
           </div>
         </div>
       </div>`;
   }).join('');
+}
+
+function veNhanTrangThai(item){
+  if (item.trangThai === 'DaHuy') return `<span class="badge-status warn">🗑️ Đã hủy</span>`;
+  if (item.trangThai === 'ChoLamRo') return `<span class="badge-status warn">Chờ làm rõ</span>`;
+  if (item.ketQua === 'HoanThanh') return `<span class="badge-status" style="color:#5C8368;border-color:#5C8368">✅ Hoàn thành</span>`;
+  if (item.ketQua === 'BoLo') return `<span class="badge-status warn">❌ Bỏ lỡ</span>`;
+  return `<span class="badge-status">Đã lên lịch</span>`;
 }
 
 function veTheGhiChu(item){
@@ -846,10 +887,12 @@ function moModalThem(){
   document.getElementById('modeSwitch').style.display='flex';
   document.getElementById('vanBanAI').value='';
   document.getElementById('btnXoa').style.display='none';
+  document.getElementById('btnLuuViec').style.display='block';
   document.getElementById('ketQuaActions').style.display='none';
   document.getElementById('khoiThoiGianViec').style.display='block';
   document.getElementById('labelTieuDe').textContent='Tiêu đề';
   document.getElementById('khoiAnhDinhKem').style.display='none';
+  document.querySelectorAll('#formChiTiet input, #formChiTiet select').forEach(el => el.disabled = false);
   chonChe('ai');
   document.getElementById('formChiTiet').style.display='none';
   layDataForm(null);
@@ -862,16 +905,23 @@ function moModalSua(id){
   if(!item) return;
   DANG_SUA_ID = id;
   const laGhiChu = item.trangThai==='GhiChu';
-  document.getElementById('modalTitle').textContent = laGhiChu ? '📝 Sửa ghi chú' : (item.trangThai==='ChoLamRo' ? 'Bổ sung thông tin' : 'Sửa việc');
-  document.getElementById('modalSub').textContent = laGhiChu
-    ? 'Ghi chú không có giờ, không lên Calendar, không nhắc.'
-    : (item.trangThai==='ChoLamRo' ? 'Việc này AI chưa chắc ngày giờ — anh điền nốt giúp em.' : 'Sửa thông tin rồi lưu lại.');
+  const daHuy = item.trangThai==='DaHuy';
+  document.getElementById('modalTitle').textContent = daHuy ? '🗑️ Việc đã hủy' : (laGhiChu ? '📝 Sửa ghi chú' : (item.trangThai==='ChoLamRo' ? 'Bổ sung thông tin' : 'Sửa việc'));
+  document.getElementById('modalSub').textContent = daHuy
+    ? 'Việc này đã hủy, chỉ xem lại thông tin, không sửa được nữa.'
+    : (laGhiChu ? 'Ghi chú không có giờ, không lên Calendar, không nhắc.' : (item.trangThai==='ChoLamRo' ? 'Việc này AI chưa chắc ngày giờ — anh điền nốt giúp em.' : 'Sửa thông tin rồi lưu lại.'));
   document.getElementById('modeSwitch').style.display='none';
   document.getElementById('formChiTiet').style.display='block';
   document.getElementById('khoiThoiGianViec').style.display = laGhiChu ? 'none' : 'block';
   document.getElementById('labelTieuDe').textContent = laGhiChu ? 'Nội dung ghi chú' : 'Tiêu đề';
-  document.getElementById('btnXoa').style.display='block';
+  document.getElementById('btnXoa').style.display='none';
+  document.getElementById('btnLuuViec').style.display = daHuy ? 'none' : 'block';
   document.getElementById('ketQuaActions').style.display = item.trangThai==='DaTao' ? 'flex' : 'none';
+
+  // Vô hiệu hóa toàn bộ ô nhập khi chỉ xem (việc đã hủy)
+  document.querySelectorAll('#formChiTiet input, #formChiTiet select').forEach(el => el.disabled = daHuy);
+
+  if (!daHuy) document.getElementById('btnXoa').style.display='block';
 
   if (item.anhDinhKemId) {
     document.getElementById('khoiAnhDinhKem').style.display='block';
