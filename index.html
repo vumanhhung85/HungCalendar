@@ -371,6 +371,10 @@
       <label>Email nhận mã khôi phục mật khẩu</label>
       <input id="csRecoveryEmail" placeholder="vd: vumanhhung85@gmail.com">
     </div>
+    <div class="field">
+      <label>Link Dashboard (nút "Sửa" trên Telegram sẽ mở link này)</label>
+      <input id="csDashboardUrl" placeholder="vd: https://thuky.tytlinhxuan.cloud/">
+    </div>
     <div class="hint">Đổi Token Bot thì phải chạy lại hàm <b>thietLapWebhookTelegram</b> trong Apps Script để Telegram nhận đúng token mới.</div>
 
     <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
@@ -431,6 +435,7 @@ let TAB_HIEN_TAI = 'homnay';
 let DU_AN_LOC = 'Tat';
 let CHON_NHAC = new Set([30]);
 let DANG_SUA_ID = null;
+let VIEC_CAN_MO = new URLSearchParams(window.location.search).get('viec') || null;
 const HO_TRO_SINH_TRAC = !!(window.PublicKeyCredential);
 
 /* ================== ĐĂNG NHẬP ================== */
@@ -478,7 +483,8 @@ async function thuDangNhap(mk){
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
       await taiDanhSachDuAn();
-      taiDuLieu();
+      await taiDuLieu();
+      moViecTuLinkSau();
     } else {
       document.getElementById('loginError').style.display='block';
     }
@@ -486,6 +492,19 @@ async function thuDangNhap(mk){
     document.getElementById('loginError').textContent = 'Không kết nối được server: ' + e.message;
     document.getElementById('loginError').style.display='block';
   }
+}
+
+function moViecTuLinkSau(){
+  if (!VIEC_CAN_MO) return;
+  const item = TAT_CA.find(x=>x.id===VIEC_CAN_MO);
+  if (item) {
+    moModalSua(VIEC_CAN_MO);
+  } else {
+    alert('⚠️ Không tìm thấy việc này trên Dashboard (có thể đã bị xóa hoặc đổi khác).');
+  }
+  // Xóa ?viec=... khỏi thanh địa chỉ để F5 sau này không tự mở lại modal này nữa
+  window.history.replaceState({}, document.title, window.location.pathname);
+  VIEC_CAN_MO = null;
 }
 
 function dangXuat(){
@@ -1017,6 +1036,7 @@ async function moModalCaiDat(){
     document.getElementById('csTgChatId').value = res.data.tgChatId || '';
     document.getElementById('csCalendarId').value = res.data.calendarId || '';
     document.getElementById('csRecoveryEmail').value = res.data.recoveryEmail || '';
+    document.getElementById('csDashboardUrl').value = res.data.dashboardUrl || '';
     document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
     document.getElementById('csClaudeKeyMoi').placeholder = 'Hiện tại: ' + res.data.claudeKeyMask;
     document.getElementById('csBackupFolderId').value = res.data.backupFolderId || '';
@@ -1081,6 +1101,7 @@ async function luuCaiDat(){
     tgChatId: document.getElementById('csTgChatId').value.trim(),
     calendarId: document.getElementById('csCalendarId').value.trim(),
     recoveryEmail: document.getElementById('csRecoveryEmail').value.trim(),
+    dashboardUrl: document.getElementById('csDashboardUrl').value.trim(),
     tgTokenMoi: document.getElementById('csTgTokenMoi').value.trim(),
     claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
     backupFolderId: document.getElementById('csBackupFolderId').value.trim(),
