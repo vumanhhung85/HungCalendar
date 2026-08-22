@@ -24,13 +24,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F6F5F1; --surface:#FFFFFF; --ink:#1C2321; --ink-soft:#5B615E;
-    --line:#E1DDD3; --accent:#2B4C7E; --accent-soft:#E7EDF5; --urgent:#C1440E;
-    --r-nhatro:#5C8368; --r-bmb:#A8384A; --r-ytế:#3A6EA5; --r-congty:#8B6D3F; --r-canhan:#6B5B95; --r-khac:#8A8A85;
-    --radius:10px; --shadow:0 1px 2px rgba(28,35,33,0.06), 0 4px 16px rgba(28,35,33,0.05);
+    --bg:#D9BD84; --surface:#EDDBAA; --ink:#2B1D0F; --ink-soft:#6B5030;
+    --line:#A9824A; --accent:#B0491E; --accent-soft:#F0D9B5; --urgent:#8B2E1F;
+    --r-nhatro:#5F7350; --r-bmb:#8B3A3A; --r-ytế:#3F5E7A; --r-congty:#9C7A2E; --r-canhan:#6B5580; --r-khac:#7A6E5C;
+    --radius:10px; --shadow:0 1px 2px rgba(43,29,15,0.12), 0 4px 16px rgba(43,29,15,0.10);
+    --char-vignette: inset 0 0 26px rgba(60,32,10,0.22), inset 0 0 3px rgba(60,32,10,0.35);
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  body{
+    margin:0;color:var(--ink);font-family:'Inter',system-ui,sans-serif;
+    background-color:var(--bg);
+    background-image:
+      repeating-linear-gradient(90deg, rgba(60,32,10,0.05) 0px, transparent 2px, transparent 34px, rgba(60,32,10,0.05) 36px),
+      repeating-linear-gradient(0deg, rgba(139,101,44,0.04) 0px, transparent 3px, transparent 7px),
+      radial-gradient(ellipse at 20% 0%, rgba(255,230,180,0.25), transparent 60%),
+      radial-gradient(ellipse at 100% 100%, rgba(60,32,10,0.12), transparent 55%);
+    background-attachment:fixed;
+  }
   h1,h2,h3,.display{font-family:'Fraunces',serif;}
   .mono{font-family:'IBM Plex Mono',monospace;}
   ::selection{background:var(--accent-soft);}
@@ -39,7 +49,7 @@
 
   /* ---------- LOGIN ---------- */
   #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-  .login-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:40px 32px;max-width:360px;width:100%;box-shadow:var(--shadow);}
+  .login-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:40px 32px;max-width:360px;width:100%;box-shadow:var(--shadow), var(--char-vignette);}
   .login-card .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
   .login-card h1{font-size:26px;margin:0 0 6px;font-weight:600;}
   .login-card p{color:var(--ink-soft);font-size:14px;margin:0 0 24px;}
@@ -68,14 +78,14 @@
   .chip.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
   .dot-so{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;font-family:'IBM Plex Mono',monospace;}
-  .stat-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .stat-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--char-vignette);}
   .stat-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--ink-soft);}
   .stat-row b{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
 
   .main{flex:1;padding:20px 24px 100px;min-width:0;}
 
   /* ---------- Ô NHẬP LỊCH NHANH ---------- */
-  .quick-add-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:22px;}
+  .quick-add-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow), var(--char-vignette);margin-bottom:22px;}
   .quick-add-card textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:14.5px;background:none;color:var(--ink);min-height:44px;}
   .quick-add-preview{position:relative;display:inline-block;margin-top:6px;}
   .quick-add-preview img{max-height:90px;border-radius:8px;display:block;}
@@ -91,10 +101,15 @@
   .search-bar input{width:100%;padding:10px 38px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface);color:var(--ink);}
   .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6;pointer-events:none;}
   .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:6px;}
-  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);overflow-x:auto;}
-  .tab{padding:9px 14px;font-size:13.5px;border:none;background:none;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;}
-  .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
-  .tab .badge{background:var(--ink-soft);color:#fff;font-size:10px;padding:1px 6px;border-radius:20px;margin-left:5px;font-family:'IBM Plex Mono',monospace;}
+
+  .chan-trang{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--ink-soft);opacity:.7;}
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .tab{padding:8px 16px;font-size:13px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;white-space:nowrap;font-weight:600;transition:transform .12s ease;}
+  .tab:hover{transform:translateY(-1px);}
+  .tab.active{box-shadow:0 3px 8px rgba(43,29,15,0.28);}
+  .tab .badge{background:rgba(255,255,255,0.45);font-size:10px;padding:1px 7px;border-radius:20px;margin-left:6px;font-family:'IBM Plex Mono',monospace;}
+  .tab.active .badge{background:rgba(255,255,255,0.3);color:#fff;}
+  .tab .badge.urgent{background:var(--urgent);color:#fff;}
   .tab .badge.urgent{background:var(--urgent);}
 
   /* ---------- THANH LỌC DỰ ÁN CHO MOBILE ---------- */
@@ -110,7 +125,7 @@
   .entry-time{width:64px;flex-shrink:0;text-align:right;padding-right:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);line-height:1.3;padding-top:12px;}
   .entry-time .d{font-size:10px;text-transform:uppercase;color:var(--ink-soft);opacity:.8;}
   .entry-node{position:absolute;left:60px;top:18px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);z-index:1;}
-  .entry-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);}
+  .entry-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow), var(--char-vignette);}
   .entry-title{font-weight:600;font-size:14.5px;margin-bottom:4px;}
   .entry-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);}
   .tag{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;color:#fff;}
@@ -124,7 +139,7 @@
   /* ---------- MODAL ---------- */
   .overlay{display:none;position:fixed;inset:0;background:rgba(28,35,33,0.45);z-index:50;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
   .overlay.show{display:flex;}
-  .modal{position:relative;background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+  .modal{position:relative;background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(43,29,15,0.35), var(--char-vignette);}
   .modal h2{font-size:19px;margin:0 0 4px;font-weight:600;}
   .modal .sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px;}
   .field{margin-bottom:14px;}
@@ -253,6 +268,8 @@
 
       <div class="tabs" id="tabs"></div>
       <div class="log" id="log"></div>
+
+      <footer class="chan-trang">© Copyright by Vũ Mạnh Hưng</footer>
     </div>
   </div>
 
@@ -428,7 +445,7 @@ const CONFIG = {
 let DU_AN_LABEL = {};
 let DU_AN_COLOR = {};
 let DANH_SACH_DU_AN = [];
-const MAU_MAC_DINH_DU_AN = ['#5C8368','#A8384A','#3A6EA5','#8B6D3F','#6B5B95','#8A8A85','#2B6CB0','#B7791F','#9B2C6F','#276749'];
+const MAU_MAC_DINH_DU_AN = ['#5F7350','#8B3A3A','#3F5E7A','#9C7A2E','#6B5580','#7A6E5C','#B0491E','#4F6B4F','#7A4A6B','#6B7A3F'];
 const REMINDER_PRESETS = [{l:'15 phút',v:15},{l:'30 phút',v:30},{l:'1 tiếng',v:60},{l:'2 tiếng',v:120},{l:'1 ngày',v:1440},{l:'1 tuần',v:10080}];
 
 let TAT_CA = [];
@@ -730,6 +747,15 @@ function demTheoTab(tabId){
   return list.filter(x=>x.ketQua!=='HoanThanh' && x.ketQua!=='BoLo').length; // tatca: chỉ đếm việc chưa chốt
 }
 
+const MAU_TAB = {
+  homnay:   {dam:'#B0491E', nhat:'#F0D4C2'},  // hổ phách
+  tuannay:  {dam:'#5F7350', nhat:'#DDE3D2'},  // rêu
+  tatca:    {dam:'#9C5A35', nhat:'#E8D6C4'},  // đất nung
+  cholamro: {dam:'#8B2E1F', nhat:'#EACBC4'},  // đỏ trầm — giữ cảm giác cảnh báo
+  ghichu:   {dam:'#6B5030', nhat:'#DFD2BC'},  // nâu
+  lichsu:   {dam:'#5C5548', nhat:'#DAD5C8'}   // xám đá
+};
+
 function veTabs(){
   const tabs = [
     {id:'homnay', label:'Hôm nay'},
@@ -741,8 +767,13 @@ function veTabs(){
   ];
   document.getElementById('tabs').innerHTML = tabs.map(t=>{
     const dem = demTheoTab(t.id);
+    const mau = MAU_TAB[t.id] || {dam:'#6B5030', nhat:'#DFD2BC'};
+    const dangChon = TAB_HIEN_TAI===t.id;
+    const style = dangChon
+      ? `background:${mau.dam};border-color:${mau.dam};color:#fff;`
+      : `background:${mau.nhat};border-color:${mau.dam};color:${mau.dam};`;
     const badgeHtml = dem>0 ? `<span class="badge ${t.urgent?'urgent':''}">${dem}</span>` : '';
-    return `<button class="tab ${TAB_HIEN_TAI===t.id?'active':''}" onclick="doiTab('${t.id}')">${t.label}${badgeHtml}</button>`;
+    return `<button class="tab ${dangChon?'active':''}" style="${style}" onclick="doiTab('${t.id}')">${t.label}${badgeHtml}</button>`;
   }).join('');
 }
 
@@ -847,7 +878,7 @@ function veLog(){
 function veNhanTrangThai(item){
   if (item.trangThai === 'DaHuy') return `<span class="badge-status warn">🗑️ Đã hủy</span>`;
   if (item.trangThai === 'ChoLamRo') return `<span class="badge-status warn">Chờ làm rõ</span>`;
-  if (item.ketQua === 'HoanThanh') return `<span class="badge-status" style="color:#5C8368;border-color:#5C8368">✅ Hoàn thành</span>`;
+  if (item.ketQua === 'HoanThanh') return `<span class="badge-status" style="color:#5F7350;border-color:#5F7350">✅ Hoàn thành</span>`;
   if (item.ketQua === 'BoLo') return `<span class="badge-status warn">❌ Bỏ lỡ</span>`;
   return `<span class="badge-status">Đã lên lịch</span>`;
 }
