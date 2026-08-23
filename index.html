@@ -110,9 +110,10 @@
 
   .chan-trang{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--ink-soft);opacity:.7;}
   .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
-  .tab{padding:8px 16px;font-size:13px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;white-space:nowrap;font-weight:600;transition:transform .12s ease;}
+  .tab{padding:8px 16px;font-size:13px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;white-space:nowrap;font-weight:600;transition:transform .12s ease;touch-action:manipulation;user-select:none;-webkit-user-select:none;}
   .tab:hover{transform:translateY(-1px);}
   .tab.active{box-shadow:0 3px 8px rgba(43,29,15,0.28);}
+  .tab.tab-dragging{opacity:.65;transform:scale(1.06);box-shadow:0 8px 18px rgba(43,29,15,0.38);z-index:6;transition:none;}
   .tab .badge{background:rgba(255,255,255,0.45);font-size:10px;padding:1px 7px;border-radius:20px;margin-left:6px;font-family:'IBM Plex Mono',monospace;}
   .tab.active .badge{background:rgba(255,255,255,0.3);color:#fff;}
   .tab .badge.urgent{background:var(--urgent);color:#fff;}
@@ -126,18 +127,31 @@
   /* ---------- LOG FEED (signature element) ---------- */
   .log{position:relative;}
   .log::before{content:'';position:absolute;left:64px;top:6px;bottom:6px;width:1px;background:var(--line);}
-  .entry{position:relative;display:flex;gap:14px;padding:12px 0;cursor:pointer;}
+  .entry{position:relative;display:flex;gap:14px;padding:4px 0;cursor:pointer;}
   .entry:hover .entry-card{border-color:var(--accent);}
   .entry-time{width:64px;flex-shrink:0;text-align:right;padding-right:16px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;padding-top:12px;}
   .entry-time .d{font-size:11px;text-transform:uppercase;color:var(--ink-soft);font-weight:500;}
-  .entry-node{position:absolute;left:60px;top:18px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);z-index:1;}
+  .entry-node{position:absolute;left:60px;top:10px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);z-index:1;}
   .entry-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow), var(--char-vignette);}
   .entry-title{font-weight:600;font-size:14.5px;margin-bottom:4px;}
+  .entry-title.sap-toi{color:var(--urgent);}
   .entry-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);}
   .tag{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;color:#fff;}
   .badge-status{font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);}
   .badge-status.warn{color:var(--urgent);border-color:var(--urgent);}
   .empty{color:var(--ink-soft);font-size:14px;padding:40px 0 40px 76px;}
+
+  /* ---------- MỐC "BÂY GIỜ" trên dòng thời gian ---------- */
+  .now-marker{position:relative;display:flex;align-items:center;gap:14px;padding:3px 0;}
+  .now-marker-time{width:64px;flex-shrink:0;text-align:right;padding-right:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);}
+  .now-marker-dot{position:absolute;left:64px;top:50%;transform:translate(-50%,-50%);font-size:15px;line-height:1;z-index:2;filter:drop-shadow(0 1px 1px rgba(43,29,15,.35));}
+  .now-marker-line{flex:1;height:0;border-top:2px dashed var(--accent);position:relative;}
+  .now-marker-line span{position:absolute;left:8px;top:-9px;background:var(--bg);padding:0 6px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- GẠCH PHÂN TÁCH NGÀY (khi danh sách gồm nhiều ngày) ---------- */
+  .ngay-divider{display:flex;align-items:center;gap:10px;margin:14px 0 8px;}
+  .ngay-divider .line{flex:1;height:1px;background:var(--line);opacity:.7;}
+  .ngay-divider span:not(.line){font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
 
   /* ---------- FAB ---------- */
   .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--ink);color:#fff;border:none;font-size:26px;box-shadow:0 6px 20px rgba(28,35,33,0.3);z-index:30;}
@@ -174,6 +188,8 @@
     .entry-time{width:48px;padding-right:10px;}
     .log::before{left:48px;}
     .entry-node{left:44px;}
+    .now-marker-time{width:48px;padding-right:10px;}
+    .now-marker-dot{left:48px;}
     .mobile-chip-bar{display:block;padding:10px 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
     .topbar{padding:14px 16px;}
     .topbar h1{font-size:19px;}
@@ -511,6 +527,7 @@ const REMINDER_PRESETS = [{l:'15 phút',v:15},{l:'30 phút',v:30},{l:'1 tiếng'
 
 let TAT_CA = [];
 let TAB_HIEN_TAI = 'homnay';
+const TAB_KEO = { timer:null, daKeo:false, el:null };
 let DU_AN_LOC = 'Tat';
 let CHON_NHAC = new Set([30]);
 let DANG_SUA_ID = null;
@@ -852,28 +869,99 @@ const MAU_TAB = {
   lichsu:   {dam:'#5C5548', nhat:'#DAD5C8'}   // xám đá
 };
 
+const TAB_DINH_NGHIA = {
+  homnay:   {label:'Hôm nay'},
+  tuannay:  {label:'Tuần này'},
+  tatca:    {label:'Tất cả'},
+  cholamro: {label:'Chờ làm rõ', urgent:true},
+  ghichu:   {label:'📝 Ghi chú'},
+  lichsu:   {label:'🗂️ Lịch sử'}
+};
+
+// Thứ tự tab do anh Hưng tự sắp xếp (nhấn giữ để kéo) — lưu riêng theo máy/trình duyệt qua localStorage
+function taiThuTuTab(){
+  try {
+    const luu = JSON.parse(localStorage.getItem('tabOrder_v1') || 'null');
+    if (Array.isArray(luu)) {
+      const hopLe = luu.filter(id => TAB_DINH_NGHIA[id]);
+      Object.keys(TAB_DINH_NGHIA).forEach(id => { if (hopLe.indexOf(id)===-1) hopLe.push(id); });
+      if (hopLe.length === Object.keys(TAB_DINH_NGHIA).length) return hopLe;
+    }
+  } catch(e){}
+  return Object.keys(TAB_DINH_NGHIA);
+}
+let TAB_ORDER = taiThuTuTab();
+
 function veTabs(){
-  const tabs = [
-    {id:'homnay', label:'Hôm nay'},
-    {id:'tuannay', label:'Tuần này'},
-    {id:'tatca', label:'Tất cả'},
-    {id:'cholamro', label:'Chờ làm rõ', urgent:true},
-    {id:'ghichu', label:'📝 Ghi chú'},
-    {id:'lichsu', label:'🗂️ Lịch sử'}
-  ];
-  document.getElementById('tabs').innerHTML = tabs.map(t=>{
-    const dem = demTheoTab(t.id);
-    const mau = MAU_TAB[t.id] || {dam:'#6B5030', nhat:'#DFD2BC'};
-    const dangChon = TAB_HIEN_TAI===t.id;
+  document.getElementById('tabs').innerHTML = TAB_ORDER.map(id=>{
+    const t = TAB_DINH_NGHIA[id];
+    if (!t) return '';
+    const dem = demTheoTab(id);
+    const mau = MAU_TAB[id] || {dam:'#6B5030', nhat:'#DFD2BC'};
+    const dangChon = TAB_HIEN_TAI===id;
     const style = dangChon
       ? `background:${mau.dam};border-color:${mau.dam};color:#fff;`
       : `background:${mau.nhat};border-color:${mau.dam};color:${mau.dam};`;
     const badgeHtml = dem>0 ? `<span class="badge ${t.urgent?'urgent':''}">${dem}</span>` : '';
-    return `<button class="tab ${dangChon?'active':''}" style="${style}" onclick="doiTab('${t.id}')">${t.label}${badgeHtml}</button>`;
+    return `<button type="button" class="tab ${dangChon?'active':''}" data-id="${id}" style="${style}" title="Chạm để chọn · nhấn giữ để sắp xếp lại" onclick="doiTab('${id}')">${t.label}${badgeHtml}</button>`;
   }).join('');
+  ganKeoThaTab();
 }
 
-function doiTab(id){ TAB_HIEN_TAI = id; ve(); }
+function doiTab(id){
+  if (TAB_KEO.daKeo) return; // vừa kéo xong thì bỏ qua cú click "ma" ngay sau đó
+  TAB_HIEN_TAI = id; ve();
+}
+
+// ---- Kéo-giữ để sắp xếp lại thứ tự tab (Pointer Events — chạy được cả chuột lẫn cảm ứng) ----
+function ganKeoThaTab(){
+  document.querySelectorAll('#tabs .tab').forEach(btn=>{
+    btn.onpointerdown = (e)=>{
+      if (e.pointerType==='mouse' && e.button!==0) return;
+      clearTimeout(TAB_KEO.timer);
+      TAB_KEO.timer = setTimeout(()=>{
+        TAB_KEO.daKeo = true;
+        TAB_KEO.el = btn;
+        btn.classList.add('tab-dragging');
+        try{ btn.setPointerCapture(e.pointerId); }catch(err){}
+        if (navigator.vibrate) navigator.vibrate(12);
+      }, 380); // nhấn giữ ~0.38s mới vào chế độ kéo, tránh nhầm với bấm chọn tab
+    };
+  });
+}
+
+document.addEventListener('pointermove', (e)=>{
+  if (!TAB_KEO.daKeo || !TAB_KEO.el) return;
+  e.preventDefault();
+  const cont = document.getElementById('tabs');
+  if (!cont) return;
+  const anh = TAB_KEO.el;
+  const cacTabKhac = [...cont.querySelectorAll('.tab')].filter(b=>b!==anh);
+  for (const sib of cacTabKhac) {
+    const r = sib.getBoundingClientRect();
+    if (e.clientY >= r.top && e.clientY <= r.bottom) {
+      const giua = r.left + r.width/2;
+      cont.insertBefore(anh, e.clientX < giua ? sib : sib.nextElementSibling);
+      break;
+    }
+  }
+}, {passive:false});
+
+function ketThucKeoThaTab(){
+  clearTimeout(TAB_KEO.timer);
+  if (TAB_KEO.daKeo && TAB_KEO.el) {
+    TAB_KEO.el.classList.remove('tab-dragging');
+    const cont = document.getElementById('tabs');
+    if (cont) {
+      TAB_ORDER = [...cont.querySelectorAll('.tab')].map(b=>b.dataset.id);
+      try{ localStorage.setItem('tabOrder_v1', JSON.stringify(TAB_ORDER)); }catch(e){}
+    }
+  }
+  TAB_KEO.el = null;
+  setTimeout(()=>{ TAB_KEO.daKeo = false; }, 60); // trễ 1 nhịp để chặn click ngay sau khi thả tay
+}
+document.addEventListener('pointerup', ketThucKeoThaTab);
+document.addEventListener('pointercancel', ketThucKeoThaTab);
 
 function locTheoNgay(list, taiSoNgayTuHomNay){
   const now = new Date(); now.setHours(0,0,0,0);
@@ -911,6 +999,22 @@ function layDanhSachTheoTab(){
   return list;
 }
 
+const TEN_THU_LOG = ['Chủ Nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+function nhanNgayDayDu(d){ return TEN_THU_LOG[d.getDay()] + ' · ' + d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}); }
+function veMocNgay(d){ return `<div class="ngay-divider"><span class="line"></span><span>${nhanNgayDayDu(d)}</span><span class="line"></span></div>`; }
+function veMocHienTai(){
+  const gio = (new Date()).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  return `<div class="now-marker"><div class="now-marker-time">${gio}</div><div class="now-marker-dot">🚶</div><div class="now-marker-line"><span>Bây giờ</span></div></div>`;
+}
+// Việc DaTao gần nhất sắp diễn ra (tính trên toàn bộ dữ liệu, không chỉ danh sách đang lọc) — dùng để tô đỏ tên
+function layIdViecSapToi(){
+  const now = new Date();
+  const ung = TAT_CA.filter(x=>x.trangThai==='DaTao' && x.ngayGioBatDau && new Date(x.ngayGioBatDau) > now);
+  if (!ung.length) return null;
+  ung.sort((a,b)=> new Date(a.ngayGioBatDau) - new Date(b.ngayGioBatDau));
+  return ung[0].id;
+}
+
 function veLog(){
   let list = layDanhSachTheoTab();
   if (DU_AN_LOC!=='Tat') list = list.filter(x=>x.duAn===DU_AN_LOC);
@@ -925,7 +1029,8 @@ function veLog(){
     );
   }
 
-  if (TAB_HIEN_TAI==='ghichu' || TAB_HIEN_TAI==='lichsu') {
+  const sapXepGiamDan = (TAB_HIEN_TAI==='ghichu' || TAB_HIEN_TAI==='lichsu');
+  if (sapXepGiamDan) {
     list.sort((a,b)=> new Date(b.ngayGioBatDau||b.thoiGianTao) - new Date(a.ngayGioBatDau||a.thoiGianTao)); // mới nhất lên đầu
   } else {
     list.sort((a,b)=> new Date(a.ngayGioBatDau||a.thoiGianTao) - new Date(b.ngayGioBatDau||b.thoiGianTao));
@@ -941,8 +1046,28 @@ function veLog(){
     return;
   }
 
-  el.innerHTML = list.map(item=>{
-    if (item.trangThai==='GhiChu') return veTheGhiChu(item);
+  const idSapToi = layIdViecSapToi();
+  // Mốc "Bây giờ" chỉ có ý nghĩa khi xếp theo thời gian tăng dần thực tế (không dùng cho Ghi chú/Lịch sử/Chờ làm rõ)
+  const coMocHienTai = !sapXepGiamDan && TAB_HIEN_TAI !== 'cholamro';
+  const now = new Date();
+  let daChenMocHienTai = !coMocHienTai;
+  let ngayTruoc = null;
+  const rows = [];
+
+  list.forEach(item=>{
+    const goc = item.ngayGioBatDau || item.thoiGianTao;
+    const dGoc = goc ? new Date(goc) : null;
+    if (dGoc && !isNaN(dGoc.getTime())) {
+      const ngayKey = dGoc.toDateString();
+      if (ngayKey !== ngayTruoc) { rows.push(veMocNgay(dGoc)); ngayTruoc = ngayKey; }
+    }
+
+    if (!daChenMocHienTai && item.ngayGioBatDau && new Date(item.ngayGioBatDau) > now) {
+      rows.push(veMocHienTai());
+      daChenMocHienTai = true;
+    }
+
+    if (item.trangThai==='GhiChu') { rows.push(veTheGhiChu(item)); return; }
 
     const co = item.ngayGioBatDau ? new Date(item.ngayGioBatDau) : null;
     const gio = co ? co.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '--:--';
@@ -952,12 +1077,13 @@ function veLog(){
     const trungBadge = item.canhBaoTrung ? `<span class="badge-status warn" title="Trùng giờ với: ${escapeHtml(item.canhBaoTrung)}">⚠️ Trùng giờ</span>` : '';
     const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
     const linkBadge = item.linkTaiLieu ? `<a href="${escapeHtml(item.linkTaiLieu)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">🔗 Tài liệu</a>` : '';
-    return `
+    const lopSapToi = item.id===idSapToi ? ' sap-toi' : '';
+    rows.push(`
       <div class="entry" onclick="moModalSua('${item.id}')">
         <div class="entry-time">${gio}<div class="d">${ngay}</div></div>
         <div class="entry-node" style="background:${mau}"></div>
         <div class="entry-card">
-          <div class="entry-title">${escapeHtml(item.tieuDe || '(chưa rõ tiêu đề)')}</div>
+          <div class="entry-title${lopSapToi}">${escapeHtml(item.tieuDe || '(chưa rõ tiêu đề)')}</div>
           <div class="entry-meta">
             <span class="tag" style="background:${mau}">${DU_AN_LABEL[item.duAn]||'Khác'}</span>
             ${item.diaDiem?`<span>📍 ${escapeHtml(item.diaDiem)}</span>`:''}
@@ -967,8 +1093,12 @@ function veLog(){
             ${linkBadge}
           </div>
         </div>
-      </div>`;
-  }).join('');
+      </div>`);
+  });
+
+  if (coMocHienTai && !daChenMocHienTai) rows.push(veMocHienTai()); // toàn bộ đã qua giờ -> mốc rơi ở cuối
+
+  el.innerHTML = rows.join('');
 }
 
 function veNhanTrangThai(item){
