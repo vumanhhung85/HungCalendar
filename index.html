@@ -60,6 +60,7 @@
   .login-card .pw-wrap input{margin-bottom:0 !important;}
   .pw-wrap .pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;height:auto;background:none;border:none;border-radius:0;font-size:16px;font-weight:400;color:var(--ink-soft);cursor:pointer;padding:6px;line-height:1;}
   .login-card button{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;}
+  .login-card .btn-sinhtrac{background:none;border:1px solid var(--line);color:var(--ink);margin-top:10px;}
   .login-error{color:var(--urgent);font-size:13px;margin-top:8px;display:none;}
 
   /* ---------- LAYOUT ---------- */
@@ -189,6 +190,7 @@
       <button type="button" class="pw-eye" onclick="toggleHienMatKhau('matKhauInput', this)">👁</button>
     </div>
     <button onclick="dangNhap()">Vào bảng điều khiển</button>
+    <button class="btn-sinhtrac" onclick="dangNhapBangSinhTrac()">👆 Mở bằng vân tay / khuôn mặt</button>
     <button onclick="moBangSinhTracThuCong()" style="margin-top:10px;background:none;border:1px solid var(--line);color:var(--ink)">👆 Mở bằng vân tay / khuôn mặt</button>
     <div class="login-error" id="loginError">Sai mật khẩu, anh thử lại nhé.</div>
     <div style="text-align:center;margin-top:14px">
@@ -298,7 +300,11 @@
     </div>
 
     <div id="formChiTiet" style="display:none">
-      <div class="field"><label id="labelTieuDe">Tiêu đề</label><input id="fTieuDe"></div>
+      <div class="field">
+        <label id="labelTieuDe">Tiêu đề</label>
+        <input id="fTieuDe">
+        <textarea id="fNoiDungGhiChu" rows="4" style="display:none" placeholder="Nội dung ghi chú..."></textarea>
+      </div>
 
       <div class="field" id="khoiAnhDinhKem" style="display:none">
         <label>Ảnh gốc đính kèm</label>
@@ -385,6 +391,37 @@
       </div>
       <div class="hint" id="csClaudeKeyHint" style="margin-top:6px"></div>
     </div>
+
+    <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
+      <label>Cài đặt cho AI</label>
+      <div class="hint" style="margin-bottom:10px">Có thể lưu sẵn cả 2 API Key, đổi qua lại lúc nào cũng được — chỉ dùng đúng 1 cái tại 1 thời điểm, cái còn lại vẫn giữ nguyên không mất.</div>
+
+      <label style="font-size:11px">Nhà cung cấp AI đang dùng</label>
+      <select id="csAiProvider" style="margin-bottom:14px">
+        <option value="claude">Claude (Anthropic)</option>
+        <option value="gemini">Gemini (Google)</option>
+      </select>
+
+      <label style="font-size:11px">Gemini API Key mới</label>
+      <div class="pw-wrap">
+        <input type="password" id="csGeminiKeyMoi" placeholder="Hiện tại: —">
+        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csGeminiKeyMoi', this)">👁</button>
+      </div>
+      <div class="hint" style="margin-top:6px;margin-bottom:14px">Lấy tại <b>aistudio.google.com</b> → Get API key — dùng chung tài khoản Google đang chạy hệ thống này, không cần tài khoản riêng. Claude API Key vẫn nhập ở ô phía trên như cũ.</div>
+
+      <div class="row2">
+        <div class="field">
+          <label style="font-size:11px">Số ngày AI nhìn về quá khứ</label>
+          <input type="number" id="csSoNgayQuaKhu" placeholder="14" min="1">
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Số việc tối đa AI xem cùng lúc</label>
+          <input type="number" id="csSoViecToiDa" placeholder="15" min="1">
+        </div>
+      </div>
+      <div class="hint">Số ngày quá khứ: việc lỡ kẹt trong quá khứ (chưa đánh dấu xong/bỏ lỡ) trong khoảng này vẫn sửa/hủy được qua chat. Số việc tối đa: càng nhiều AI càng "nhớ" được nhiều việc sắp tới hơn để khớp lệnh, nhưng cũng hơi tốn thêm 1 chút (không đáng kể).</div>
+    </div>
+
     <div class="field">
       <label>Email nhận mã khôi phục mật khẩu</label>
       <input id="csRecoveryEmail" placeholder="vd: vumanhhung85@gmail.com">
@@ -490,6 +527,25 @@ window.onload = async function(){
 function dangNhap(){
   const mk = document.getElementById('matKhauInput').value;
   thuDangNhap(mk);
+}
+
+async function dangNhapBangSinhTrac(){
+  if(!HO_TRO_SINH_TRAC){
+    alert('⚠️ Trình duyệt này chưa hỗ trợ mở khóa vân tay/khuôn mặt. Anh đăng nhập bằng mật khẩu giúp em.');
+    return;
+  }
+  const sinhTracId = localStorage.getItem('nhacLich_sinhTracId');
+  const mk = localStorage.getItem('nhacLich_matKhau');
+  if(!sinhTracId || !mk){
+    alert('⚠️ Chưa bật vân tay/khuôn mặt cho thiết bị này.\n\nĐăng nhập bằng mật khẩu trước, sau đó vào ⚙️ Cài đặt → bấm "Bật vân tay/khuôn mặt cho thiết bị này" để bật.');
+    return;
+  }
+  const oke = await moKhoaBangSinhTrac(sinhTracId);
+  if(oke){
+    thuDangNhap(mk);
+  } else {
+    alert('⚠️ Xác thực vân tay/khuôn mặt không thành công hoặc bị hủy. Anh thử lại, hoặc đăng nhập bằng mật khẩu.');
+  }
 }
 
 async function thuDangNhap(mk){
@@ -922,8 +978,10 @@ function moModalThem(){
   document.getElementById('ketQuaActions').style.display='none';
   document.getElementById('khoiThoiGianViec').style.display='block';
   document.getElementById('labelTieuDe').textContent='Tiêu đề';
+  document.getElementById('fTieuDe').style.display='block';
+  document.getElementById('fNoiDungGhiChu').style.display='none';
   document.getElementById('khoiAnhDinhKem').style.display='none';
-  document.querySelectorAll('#formChiTiet input, #formChiTiet select').forEach(el => el.disabled = false);
+  document.querySelectorAll('#formChiTiet input, #formChiTiet select, #formChiTiet textarea').forEach(el => el.disabled = false);
   chonChe('ai');
   document.getElementById('formChiTiet').style.display='none';
   layDataForm(null);
@@ -945,12 +1003,14 @@ function moModalSua(id){
   document.getElementById('formChiTiet').style.display='block';
   document.getElementById('khoiThoiGianViec').style.display = laGhiChu ? 'none' : 'block';
   document.getElementById('labelTieuDe').textContent = laGhiChu ? 'Nội dung ghi chú' : 'Tiêu đề';
+  document.getElementById('fTieuDe').style.display = laGhiChu ? 'none' : 'block';
+  document.getElementById('fNoiDungGhiChu').style.display = laGhiChu ? 'block' : 'none';
   document.getElementById('btnXoa').style.display='none';
   document.getElementById('btnLuuViec').style.display = daHuy ? 'none' : 'block';
   document.getElementById('ketQuaActions').style.display = item.trangThai==='DaTao' ? 'flex' : 'none';
 
   // Vô hiệu hóa toàn bộ ô nhập khi chỉ xem (việc đã hủy)
-  document.querySelectorAll('#formChiTiet input, #formChiTiet select').forEach(el => el.disabled = daHuy);
+  document.querySelectorAll('#formChiTiet input, #formChiTiet select, #formChiTiet textarea').forEach(el => el.disabled = daHuy);
 
   if (!daHuy) document.getElementById('btnXoa').style.display='block';
 
@@ -994,6 +1054,7 @@ function chonChe(che){
 
 function layDataForm(item){
   document.getElementById('fTieuDe').value = item?.tieuDe || '';
+  document.getElementById('fNoiDungGhiChu').value = item?.tieuDe || '';
   const bd = item?.ngayGioBatDau ? new Date(item.ngayGioBatDau) : null;
   const kt = item?.ngayGioKetThuc ? new Date(item.ngayGioKetThuc) : null;
   document.getElementById('fNgayBD').value = bd ? toDateStr(bd) : '';
@@ -1056,7 +1117,7 @@ async function luuViec(){
   const banGhiCu = DANG_SUA_ID ? TAT_CA.find(x=>x.id===DANG_SUA_ID) : null;
 
   if (banGhiCu && banGhiCu.trangThai==='GhiChu') {
-    const noiDung = document.getElementById('fTieuDe').value.trim();
+    const noiDung = document.getElementById('fNoiDungGhiChu').value.trim();
     if(!noiDung){ alert('Nội dung ghi chú không được để trống.'); return; }
     const duAnMoi = document.getElementById('fDuAn').value;
     const linkMoi = document.getElementById('fLinkTaiLieu').value.trim();
@@ -1155,14 +1216,19 @@ async function moModalCaiDat(){
   document.getElementById('csMatKhauMoi').value='';
   document.getElementById('csTgTokenMoi').value='';
   document.getElementById('csClaudeKeyMoi').value='';
+  document.getElementById('csGeminiKeyMoi').value='';
   const res = await goiAPI({action:'layCaiDat', matKhau: matKhau()});
   if(res.ok){
     document.getElementById('csTgChatId').value = res.data.tgChatId || '';
     document.getElementById('csCalendarId').value = res.data.calendarId || '';
     document.getElementById('csRecoveryEmail').value = res.data.recoveryEmail || '';
     document.getElementById('csDashboardUrl').value = res.data.dashboardUrl || '';
+    document.getElementById('csAiProvider').value = res.data.aiProvider || 'claude';
+    document.getElementById('csSoNgayQuaKhu').value = res.data.soNgayQuaKhu || '';
+    document.getElementById('csSoViecToiDa').value = res.data.soViecToiDa || '';
     document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
     document.getElementById('csClaudeKeyMoi').placeholder = 'Hiện tại: ' + res.data.claudeKeyMask;
+    document.getElementById('csGeminiKeyMoi').placeholder = 'Hiện tại: ' + res.data.geminiKeyMask;
     document.getElementById('csBackupFolderId').value = res.data.backupFolderId || '';
     hienThiLanBackup(res.data.lanBackupGanNhat);
   }
@@ -1226,8 +1292,12 @@ async function luuCaiDat(){
     calendarId: document.getElementById('csCalendarId').value.trim(),
     recoveryEmail: document.getElementById('csRecoveryEmail').value.trim(),
     dashboardUrl: document.getElementById('csDashboardUrl').value.trim(),
+    soNgayQuaKhu: document.getElementById('csSoNgayQuaKhu').value.trim(),
+    soViecToiDa: document.getElementById('csSoViecToiDa').value.trim(),
     tgTokenMoi: document.getElementById('csTgTokenMoi').value.trim(),
     claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
+    geminiKeyMoi: document.getElementById('csGeminiKeyMoi').value.trim(),
+    aiProvider: document.getElementById('csAiProvider').value,
     backupFolderId: document.getElementById('csBackupFolderId').value.trim(),
     matKhauMoi: matKhauMoi
   };
