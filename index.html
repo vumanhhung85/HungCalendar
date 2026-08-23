@@ -103,6 +103,11 @@
   .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6;pointer-events:none;}
   .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:6px;}
 
+  .lam-moi-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .btn-lam-moi{padding:6px 14px;border:1px solid var(--line);border-radius:20px;background:var(--surface);font-size:12.5px;color:var(--ink-soft);}
+  .btn-lam-moi.dang-tai{opacity:.6;pointer-events:none;}
+  #lamMoiText{font-size:11px;color:var(--ink-soft);opacity:.75;}
+
   .chan-trang{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--ink-soft);opacity:.7;}
   .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
   .tab{padding:8px 16px;font-size:13px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;white-space:nowrap;font-weight:600;transition:transform .12s ease;}
@@ -191,7 +196,6 @@
     </div>
     <button onclick="dangNhap()">Vào bảng điều khiển</button>
     <button class="btn-sinhtrac" onclick="dangNhapBangSinhTrac()">👆 Mở bằng vân tay / khuôn mặt</button>
-    <button onclick="moBangSinhTracThuCong()" style="margin-top:10px;background:none;border:1px solid var(--line);color:var(--ink)">👆 Mở bằng vân tay / khuôn mặt</button>
     <div class="login-error" id="loginError">Sai mật khẩu, anh thử lại nhé.</div>
     <div style="text-align:center;margin-top:14px">
       <a href="#" onclick="moQuenMatKhau();return false" style="font-size:13px;color:var(--ink-soft)">Quên mật khẩu?</a>
@@ -266,6 +270,11 @@
         <span class="search-icon">🔍</span>
         <input type="text" id="timKiemInput" placeholder="Tìm theo tiêu đề, địa điểm, nội dung..." oninput="veLog()">
         <button class="search-clear" id="btnXoaTimKiem" onclick="xoaTimKiem()" style="display:none">✕</button>
+      </div>
+
+      <div class="lam-moi-row">
+        <button class="btn-lam-moi" id="btnLamMoi" onclick="lamMoiThuCong()">🔄 Làm mới</button>
+        <span class="mono" id="lamMoiText"></span>
       </div>
 
       <div class="tabs" id="tabs"></div>
@@ -383,14 +392,6 @@
       </div>
       <div class="hint" id="csTgTokenHint" style="margin-top:6px"></div>
     </div>
-    <div class="field">
-      <label>Claude API Key mới</label>
-      <div class="pw-wrap">
-        <input type="password" id="csClaudeKeyMoi" placeholder="Hiện tại: —">
-        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csClaudeKeyMoi', this)">👁</button>
-      </div>
-      <div class="hint" id="csClaudeKeyHint" style="margin-top:6px"></div>
-    </div>
 
     <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
       <label>Cài đặt cho AI</label>
@@ -402,12 +403,35 @@
         <option value="gemini">Gemini (Google)</option>
       </select>
 
-      <label style="font-size:11px">Gemini API Key mới</label>
-      <div class="pw-wrap">
-        <input type="password" id="csGeminiKeyMoi" placeholder="Hiện tại: —">
-        <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csGeminiKeyMoi', this)">👁</button>
+      <div class="row2">
+        <div class="field">
+          <label style="font-size:11px">Claude API Key mới</label>
+          <div class="pw-wrap">
+            <input type="password" id="csClaudeKeyMoi" placeholder="Hiện tại: —">
+            <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csClaudeKeyMoi', this)">👁</button>
+          </div>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Gemini API Key mới</label>
+          <div class="pw-wrap">
+            <input type="password" id="csGeminiKeyMoi" placeholder="Hiện tại: —">
+            <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csGeminiKeyMoi', this)">👁</button>
+          </div>
+        </div>
       </div>
-      <div class="hint" style="margin-top:6px;margin-bottom:14px">Lấy tại <b>aistudio.google.com</b> → Get API key — dùng chung tài khoản Google đang chạy hệ thống này, không cần tài khoản riêng. Claude API Key vẫn nhập ở ô phía trên như cũ.</div>
+      <div class="hint" style="margin-top:6px;margin-bottom:14px">Claude: lấy tại <b>console.anthropic.com</b>. Gemini: lấy tại <b>aistudio.google.com</b> → Get API key (dùng chung tài khoản Google đang chạy hệ thống này, không cần tài khoản riêng).</div>
+
+      <div class="row2">
+        <div class="field">
+          <label style="font-size:11px">Model Claude đang dùng</label>
+          <input id="csClaudeModel" placeholder="claude-haiku-4-5-20251001">
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Model Gemini đang dùng</label>
+          <input id="csGeminiModel" placeholder="gemini-3.5-flash-lite">
+        </div>
+      </div>
+      <div class="hint" style="margin-bottom:14px">Nếu Telegram báo lỗi "model không còn hỗ trợ"/"404" — hãng đã đổi tên model, chỉ cần sửa đúng tên mới vào đây, không cần chờ code mới.</div>
 
       <div class="row2">
         <div class="field">
@@ -559,6 +583,7 @@ async function thuDangNhap(mk){
       await taiDanhSachDuAn();
       await taiDuLieu();
       moViecTuLinkSau();
+      batDauTuDongLamMoi();
     } else {
       document.getElementById('loginError').style.display='block';
     }
@@ -630,29 +655,6 @@ async function moKhoaBangSinhTrac(idB64){
     return true;
   } catch(e){
     return false;
-  }
-}
-
-async function moBangSinhTracThuCong(){
-  if (!HO_TRO_SINH_TRAC) {
-    alert('⚠️ Trình duyệt này chưa hỗ trợ vân tay/khuôn mặt. Anh đăng nhập bằng mật khẩu giúp em nhé.');
-    return;
-  }
-  const sinhTracId = localStorage.getItem('nhacLich_sinhTracId');
-  if (!sinhTracId) {
-    alert('⚠️ Chưa bật vân tay/khuôn mặt cho thiết bị này. Đăng nhập bằng mật khẩu trước, rồi vào ⚙️ Cài đặt → "Bật vân tay/khuôn mặt cho thiết bị này" nhé anh.');
-    return;
-  }
-  const mk = localStorage.getItem('nhacLich_matKhau');
-  if (!mk) {
-    alert('⚠️ Chưa có mật khẩu lưu sẵn trên thiết bị này để dùng cùng vân tay. Anh đăng nhập bằng mật khẩu 1 lần trước nhé.');
-    return;
-  }
-  const oke = await moKhoaBangSinhTrac(sinhTracId);
-  if (oke) {
-    thuDangNhap(mk);
-  } else {
-    alert('⚠️ Xác thực vân tay/khuôn mặt không thành công. Anh thử lại, hoặc đăng nhập bằng mật khẩu.');
   }
 }
 
@@ -739,7 +741,45 @@ function veTuyChonDuAn(){
 
 async function taiDuLieu(){
   const res = await goiAPI({action:'list', matKhau: matKhau()});
-  if (res.ok) { TAT_CA = res.data; ve(); }
+  if (res.ok) {
+    TAT_CA = res.data;
+    ve();
+    const el = document.getElementById('lamMoiText');
+    if (el) el.textContent = 'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+}
+
+/* ---- Tự động làm mới định kỳ ---- */
+const CHU_KY_TU_DONG_LAM_MOI = 30000; // 30 giây
+let AUTO_LAM_MOI_TIMER = null;
+
+function dangMoModalNao(){
+  return document.getElementById('overlay').classList.contains('show') ||
+         document.getElementById('overlayCaiDat').classList.contains('show') ||
+         document.getElementById('overlayThemDuAn').classList.contains('show');
+}
+
+function batDauTuDongLamMoi(){
+  if (AUTO_LAM_MOI_TIMER) clearInterval(AUTO_LAM_MOI_TIMER);
+  AUTO_LAM_MOI_TIMER = setInterval(() => {
+    if (document.hidden) return; // tab đang ẩn (chuyển sang app khác) thì khỏi gọi, đỡ tốn
+    if (dangMoModalNao()) return; // đang mở modal sửa/cài đặt thì khỏi ngắt ngang
+    taiDuLieu();
+  }, CHU_KY_TU_DONG_LAM_MOI);
+}
+
+document.addEventListener('visibilitychange', () => {
+  // Quay lại tab sau khi rời đi thì làm mới ngay, khỏi chờ tới chu kỳ tiếp theo
+  if (!document.hidden && document.getElementById('app').style.display !== 'none') taiDuLieu();
+});
+
+async function lamMoiThuCong(){
+  const btn = document.getElementById('btnLamMoi');
+  btn.classList.add('dang-tai');
+  btn.textContent = '⏳ Đang tải...';
+  await taiDuLieu();
+  btn.classList.remove('dang-tai');
+  btn.textContent = '🔄 Làm mới';
 }
 
 /* ================== RENDER ================== */
@@ -1224,6 +1264,8 @@ async function moModalCaiDat(){
     document.getElementById('csRecoveryEmail').value = res.data.recoveryEmail || '';
     document.getElementById('csDashboardUrl').value = res.data.dashboardUrl || '';
     document.getElementById('csAiProvider').value = res.data.aiProvider || 'claude';
+    document.getElementById('csClaudeModel').value = res.data.claudeModel || '';
+    document.getElementById('csGeminiModel').value = res.data.geminiModel || '';
     document.getElementById('csSoNgayQuaKhu').value = res.data.soNgayQuaKhu || '';
     document.getElementById('csSoViecToiDa').value = res.data.soViecToiDa || '';
     document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
@@ -1298,6 +1340,8 @@ async function luuCaiDat(){
     claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
     geminiKeyMoi: document.getElementById('csGeminiKeyMoi').value.trim(),
     aiProvider: document.getElementById('csAiProvider').value,
+    claudeModel: document.getElementById('csClaudeModel').value.trim(),
+    geminiModel: document.getElementById('csGeminiModel').value.trim(),
     backupFolderId: document.getElementById('csBackupFolderId').value.trim(),
     matKhauMoi: matKhauMoi
   };
