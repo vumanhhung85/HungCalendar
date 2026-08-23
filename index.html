@@ -74,9 +74,10 @@
   .sidebar{width:220px;flex-shrink:0;padding:20px 16px;position:sticky;top:70px;align-self:flex-start;}
   .sidebar h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink);font-family:'Inter';font-weight:800;margin:0 0 10px;}
   .chip-list{display:flex;flex-direction:column;gap:4px;margin-bottom:26px;}
-  .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:14.5px;border:1px solid transparent;background:none;text-align:left;color:var(--ink);}
+  .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:14.5px;border:1px solid transparent;background:none;text-align:left;color:var(--ink);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
   .chip:hover{background:var(--surface);}
   .chip.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .chip.chip-dragging{opacity:.65;background:var(--surface);box-shadow:0 6px 14px rgba(43,29,15,0.3);z-index:6;position:relative;transition:none;}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
   .dot-so{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;font-family:'IBM Plex Mono',monospace;}
   .stat-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--char-vignette);}
@@ -806,6 +807,24 @@ function ve(){
   veLog();
 }
 
+// Thứ tự chip dự án do anh Hưng tự sắp xếp (nhấn giữ để kéo) — lưu riêng theo máy/trình duyệt, KHÔNG đụng tới dữ liệu Sheet DuAn
+function taiThuTuDuAn(){
+  try {
+    const luu = JSON.parse(localStorage.getItem('duAnOrder_v1') || 'null');
+    if (Array.isArray(luu)) return luu;
+  } catch(e){}
+  return [];
+}
+let DU_AN_ORDER = taiThuTuDuAn();
+
+function danhSachDuAnDaSapXep(){
+  const map = {};
+  DANH_SACH_DU_AN.forEach(d=>{ map[d.id]=d; });
+  const daXep = DU_AN_ORDER.map(id=>map[id]).filter(Boolean);
+  const conLai = DANH_SACH_DU_AN.filter(d=> DU_AN_ORDER.indexOf(d.id)===-1); // dự án mới thêm sau, chưa có trong thứ tự lưu -> nối vào cuối
+  return daXep.concat(conLai);
+}
+
 function veSidebar(){
   const listHienTai = layDanhSachTheoTab();
   const demTheoDuAn = {};
@@ -817,12 +836,12 @@ function veSidebar(){
     return `<button class="chip ${DU_AN_LOC==='Tat'?'active':''}" onclick="locDuAn('Tat')">${dotHtml}Tất cả dự án</button>`;
   })();
 
-  const chipsDuAn = DANH_SACH_DU_AN.map(d => {
+  const chipsDuAn = danhSachDuAnDaSapXep().map(d => {
     const dem = demTheoDuAn[d.id]||0;
     const dotHtml = dem>0
       ? `<span class="dot-so" style="background:${d.mau}">${dem}</span>`
       : `<span class="dot" style="background:${d.mau}"></span>`;
-    return `<button class="chip ${DU_AN_LOC===d.id?'active':''}" onclick="locDuAn('${d.id}')">${dotHtml}${escapeHtml(d.ten)}</button>`;
+    return `<button class="chip ${DU_AN_LOC===d.id?'active':''}" data-dua-an="${d.id}" title="Chạm để lọc · nhấn giữ để sắp xếp lại" onclick="locDuAn('${d.id}')">${dotHtml}${escapeHtml(d.ten)}</button>`;
   }).join('');
 
   const nutThem = `<button class="chip" onclick="moModalThemDuAn()" style="color:var(--accent)">➕ Thêm dự án</button>`;
@@ -830,6 +849,8 @@ function veSidebar(){
   const chipsHtml = tatCaChip + chipsDuAn + nutThem;
   document.getElementById('projectChips').innerHTML = chipsHtml;
   document.getElementById('projectChipsMobile').innerHTML = chipsHtml;
+  ganKeoThaChip('projectChips');
+  ganKeoThaChip('projectChipsMobile');
 
   const hoatDong = TAT_CA.filter(x=>x.trangThai==='DaTao');
   const choLamRo = TAT_CA.filter(x=>x.trangThai==='ChoLamRo');
@@ -841,7 +862,71 @@ function veSidebar(){
   `;
 }
 
-function locDuAn(p){ DU_AN_LOC = p; ve(); }
+function locDuAn(p){
+  if (CHIP_KEO.daKeo) return; // vừa kéo xong thì bỏ qua cú click "ma" ngay sau đó
+  DU_AN_LOC = p; ve();
+}
+
+// ---- Kéo-giữ để sắp xếp lại thứ tự chip dự án (dùng chung cho sidebar máy tính + thanh chip điện thoại) ----
+const CHIP_KEO = { timer:null, daKeo:false, el:null, cont:null };
+
+function ganKeoThaChip(containerId){
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  cont.querySelectorAll('.chip[data-dua-an]').forEach(btn=>{
+    btn.onpointerdown = (e)=>{
+      if (e.pointerType==='mouse' && e.button!==0) return;
+      clearTimeout(CHIP_KEO.timer);
+      CHIP_KEO.timer = setTimeout(()=>{
+        CHIP_KEO.daKeo = true;
+        CHIP_KEO.el = btn;
+        CHIP_KEO.cont = cont;
+        btn.classList.add('chip-dragging');
+        try{ btn.setPointerCapture(e.pointerId); }catch(err){}
+        if (navigator.vibrate) navigator.vibrate(12);
+      }, 380); // nhấn giữ ~0.38s mới vào chế độ kéo, tránh nhầm với bấm lọc dự án
+    };
+  });
+}
+
+document.addEventListener('pointermove', (e)=>{
+  if (!CHIP_KEO.daKeo || !CHIP_KEO.el || !CHIP_KEO.cont) return;
+  e.preventDefault();
+  const anh = CHIP_KEO.el;
+  const cont = CHIP_KEO.cont;
+  const hangNgang = getComputedStyle(cont).flexDirection === 'row'; // thanh chip điện thoại nằm ngang, sidebar máy tính nằm dọc
+  const cacChipKhac = [...cont.querySelectorAll('.chip[data-dua-an]')].filter(b=>b!==anh);
+  for (const sib of cacChipKhac) {
+    const r = sib.getBoundingClientRect();
+    if (hangNgang) {
+      if (e.clientY >= r.top && e.clientY <= r.bottom) {
+        const giua = r.left + r.width/2;
+        cont.insertBefore(anh, e.clientX < giua ? sib : sib.nextElementSibling);
+        break;
+      }
+    } else {
+      if (e.clientX >= r.left && e.clientX <= r.right) {
+        const giua = r.top + r.height/2;
+        cont.insertBefore(anh, e.clientY < giua ? sib : sib.nextElementSibling);
+        break;
+      }
+    }
+  }
+}, {passive:false});
+
+function ketThucKeoThaChip(){
+  clearTimeout(CHIP_KEO.timer);
+  if (CHIP_KEO.daKeo && CHIP_KEO.el && CHIP_KEO.cont) {
+    CHIP_KEO.el.classList.remove('chip-dragging');
+    DU_AN_ORDER = [...CHIP_KEO.cont.querySelectorAll('.chip[data-dua-an]')].map(b=>b.dataset.duAn);
+    try{ localStorage.setItem('duAnOrder_v1', JSON.stringify(DU_AN_ORDER)); }catch(e){}
+    veSidebar(); // vẽ lại để đồng bộ thứ tự mới sang cả nơi còn lại (sidebar máy tính ↔ thanh chip điện thoại)
+  }
+  CHIP_KEO.el = null; CHIP_KEO.cont = null;
+  setTimeout(()=>{ CHIP_KEO.daKeo = false; }, 60); // trễ 1 nhịp để chặn click ngay sau khi thả tay
+}
+document.addEventListener('pointerup', ketThucKeoThaChip);
+document.addEventListener('pointercancel', ketThucKeoThaChip);
 
 function demTheoTab(tabId){
   if (tabId==='lichsu') return TAT_CA.filter(x => x.trangThai==='DaHuy' || x.ketQua==='HoanThanh' || x.ketQua==='BoLo').length;
