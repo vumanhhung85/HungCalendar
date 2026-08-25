@@ -1295,6 +1295,8 @@ async function danhDauKetQua(ketQua){
     if (idx>=0 && backup) TAT_CA[idx] = backup;
     ve();
     alert('⚠️ Lỗi: ' + res.error + ' — đã hoàn tác thay đổi.');
+  } else if (res.canhBaoCalendar) {
+    setTimeout(()=>alert('⚠️ Đã ghi nhận trong hệ thống, nhưng tắt nhắc trên Calendar bị lỗi: ' + res.canhBaoCalendar + '\nAnh kiểm tra tay trên Google Calendar giúp.'), 300);
   }
 }
 
