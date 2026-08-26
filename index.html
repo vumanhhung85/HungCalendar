@@ -160,6 +160,12 @@
   /* ---------- MODAL ---------- */
   .overlay{display:none;position:fixed;inset:0;background:rgba(28,35,33,0.45);z-index:50;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
   .overlay.show{display:flex;}
+
+  /* ---------- LIGHTBOX xem ảnh gốc nhanh (không rời app, không cần chọn tài khoản Google) ---------- */
+  .lightbox-overlay{display:none;position:fixed;inset:0;background:rgba(20,15,8,0.92);z-index:80;align-items:center;justify-content:center;padding:20px;}
+  .lightbox-overlay.show{display:flex;}
+  .lightbox-img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+  .lightbox-close{position:fixed;top:18px;right:18px;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.4);background:rgba(0,0,0,0.3);color:#fff;font-size:18px;line-height:1;cursor:pointer;}
   .modal{position:relative;background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(43,29,15,0.35), var(--char-vignette);}
   .modal h2{font-size:19px;margin:0 0 4px;font-weight:600;}
   .modal .sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px;}
@@ -333,10 +339,8 @@
       </div>
 
       <div class="field" id="khoiAnhDinhKem" style="display:none">
-        <label>Ảnh gốc đính kèm</label>
-        <a id="anhDinhKemLink" href="#" target="_blank">
-          <img id="anhDinhKemImg" src="" style="max-width:100%;border-radius:8px;border:1px solid var(--line);display:block">
-        </a>
+        <label>Ảnh gốc đính kèm <span style="font-weight:400;color:var(--ink-soft);font-size:11px">(chạm để xem lớn)</span></label>
+        <img id="anhDinhKemImg" src="" style="max-width:100%;border-radius:8px;border:1px solid var(--line);display:block;cursor:zoom-in" onclick="moXemAnhNhanh(this.dataset.anhId)">
       </div>
 
       <div id="khoiThoiGianViec">
@@ -407,7 +411,7 @@
         <input type="password" id="csTgTokenMoi" placeholder="Hiện tại: —">
         <button type="button" class="pw-eye" onclick="toggleHienMatKhau('csTgTokenMoi', this)">👁</button>
       </div>
-      <div class="hint" id="csTgTokenHint" style="margin-top:6px"></div>
+      <div class="hint" id="csTgTokenHint" style="margin-top:6px">Đổi Token Bot thì phải chạy lại hàm <b>thietLapWebhookTelegram</b> trong Apps Script để Telegram nhận đúng token mới.</div>
     </div>
 
     <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
@@ -471,7 +475,6 @@
       <label>Link Dashboard (nút "Sửa" trên Telegram sẽ mở link này)</label>
       <input id="csDashboardUrl" placeholder="vd: https://thuky.tytlinhxuan.cloud/">
     </div>
-    <div class="hint">Đổi Token Bot thì phải chạy lại hàm <b>thietLapWebhookTelegram</b> trong Apps Script để Telegram nhận đúng token mới.</div>
 
     <div class="field" style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line)">
       <label>Sao lưu dữ liệu</label>
@@ -511,6 +514,11 @@
       <button class="btn btn-primary" onclick="luuDuAnMoi()">Thêm dự án</button>
     </div>
   </div>
+</div>
+
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="dongXemAnhNhanh()">
+  <button class="lightbox-close" onclick="dongXemAnhNhanh()">✕</button>
+  <img class="lightbox-img" id="lightboxImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <script>
@@ -1271,8 +1279,9 @@ function moModalSua(id){
 
   if (item.anhDinhKemId) {
     document.getElementById('khoiAnhDinhKem').style.display='block';
-    document.getElementById('anhDinhKemImg').src = `https://drive.google.com/thumbnail?id=${item.anhDinhKemId}&sz=w800`;
-    document.getElementById('anhDinhKemLink').href = `https://drive.google.com/file/d/${item.anhDinhKemId}/view`;
+    const anhImgEl = document.getElementById('anhDinhKemImg');
+    anhImgEl.src = `https://drive.google.com/thumbnail?id=${item.anhDinhKemId}&sz=w800`;
+    anhImgEl.dataset.anhId = item.anhDinhKemId;
   } else {
     document.getElementById('khoiAnhDinhKem').style.display='none';
   }
@@ -1301,6 +1310,18 @@ async function danhDauKetQua(ketQua){
 }
 
 function dongModal(){ document.getElementById('overlay').classList.remove('show'); }
+
+// Xem nhanh ảnh gốc ngay trong app — dùng endpoint thumbnail (không cần chọn tài khoản Google,
+// không rời app), chỉ xin cỡ lớn hơn (w1600) thay vì mở hẳn trang Drive như trước.
+function moXemAnhNhanh(anhId){
+  if (!anhId) return;
+  document.getElementById('lightboxImg').src = `https://drive.google.com/thumbnail?id=${anhId}&sz=w1600`;
+  document.getElementById('lightboxOverlay').classList.add('show');
+}
+function dongXemAnhNhanh(){
+  document.getElementById('lightboxOverlay').classList.remove('show');
+  document.getElementById('lightboxImg').src = '';
+}
 
 function chonChe(che){
   document.getElementById('modeAI').classList.toggle('active', che==='ai');
