@@ -31,9 +31,11 @@
     --char-vignette: inset 0 0 26px rgba(60,32,10,0.16), inset 0 0 3px rgba(60,32,10,0.28);
   }
   *{box-sizing:border-box;}
+  html{overflow-x:hidden;}
   body{
     margin:0;color:var(--ink);font-family:'Inter',system-ui,sans-serif;
     background-color:var(--bg);
+    overflow-x:hidden;
     background-image:
       repeating-linear-gradient(90deg, rgba(60,32,10,0.05) 0px, transparent 2px, transparent 34px, rgba(60,32,10,0.05) 36px),
       repeating-linear-gradient(0deg, rgba(139,101,44,0.04) 0px, transparent 3px, transparent 7px),
@@ -134,7 +136,7 @@
   .entry-time .d{font-size:11px;text-transform:uppercase;color:var(--ink-soft);font-weight:500;}
   .entry-node{position:absolute;left:60px;top:10px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);z-index:1;}
   .entry-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow), var(--char-vignette);}
-  .entry-title{font-weight:600;font-size:14.5px;margin-bottom:4px;}
+  .entry-title{font-weight:600;font-size:14.5px;margin-bottom:4px;overflow-wrap:break-word;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .entry-title.sap-toi{color:var(--urgent);}
   .entry-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);}
   .tag{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;color:#fff;}
@@ -340,7 +342,7 @@
 
       <div class="field" id="khoiAnhDinhKem" style="display:none">
         <label>Ảnh gốc đính kèm <span style="font-weight:400;color:var(--ink-soft);font-size:11px">(chạm để xem lớn)</span></label>
-        <img id="anhDinhKemImg" src="" style="max-width:100%;border-radius:8px;border:1px solid var(--line);display:block;cursor:zoom-in" onclick="moXemAnhNhanh(this.dataset.anhId)">
+        <div id="anhDinhKemGallery" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
 
       <div id="khoiThoiGianViec">
@@ -1168,7 +1170,8 @@ function veLog(){
     const mau = DU_AN_COLOR[item.duAn] || DU_AN_COLOR.Khac;
     const trangThaiBadge = veNhanTrangThai(item);
     const trungBadge = item.canhBaoTrung ? `<span class="badge-status warn" title="Trùng giờ với: ${escapeHtml(item.canhBaoTrung)}">⚠️ Trùng giờ</span>` : '';
-    const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
+    const soAnhBadge = String(item.anhDinhKemId || '').split(',').filter(Boolean).length;
+    const anhBadge = soAnhBadge ? `<span>📎 ${soAnhBadge > 1 ? soAnhBadge + ' ảnh' : 'Có ảnh'}</span>` : '';
     const linkBadge = item.linkTaiLieu ? `<a href="${escapeHtml(item.linkTaiLieu)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">🔗 Tài liệu</a>` : '';
     const lopSapToi = item.id===idSapToi ? ' sap-toi' : '';
     rows.push(`
@@ -1205,7 +1208,8 @@ function veNhanTrangThai(item){
 function veTheGhiChu(item){
   const mau = DU_AN_COLOR[item.duAn] || DU_AN_COLOR.Khac;
   const ngayTao = item.thoiGianTao ? new Date(item.thoiGianTao).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) : '';
-  const anhBadge = item.anhDinhKemId ? `<span>📎 Có ảnh</span>` : '';
+  const soAnhBadge = String(item.anhDinhKemId || '').split(',').filter(Boolean).length;
+  const anhBadge = soAnhBadge ? `<span>📎 ${soAnhBadge > 1 ? soAnhBadge + ' ảnh' : 'Có ảnh'}</span>` : '';
   const linkBadge = item.linkTaiLieu ? `<a href="${escapeHtml(item.linkTaiLieu)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">🔗 Tài liệu</a>` : '';
   return `
     <div class="entry" onclick="moModalSua('${item.id}')">
@@ -1277,11 +1281,14 @@ function moModalSua(id){
 
   if (!daHuy) document.getElementById('btnXoa').style.display='block';
 
-  if (item.anhDinhKemId) {
+  const dsAnhDinhKem = String(item.anhDinhKemId || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (dsAnhDinhKem.length) {
     document.getElementById('khoiAnhDinhKem').style.display='block';
-    const anhImgEl = document.getElementById('anhDinhKemImg');
-    anhImgEl.src = `https://drive.google.com/thumbnail?id=${item.anhDinhKemId}&sz=w800`;
-    anhImgEl.dataset.anhId = item.anhDinhKemId;
+    document.getElementById('anhDinhKemGallery').innerHTML = dsAnhDinhKem.map(anhId => `
+      <img src="https://drive.google.com/thumbnail?id=${anhId}&sz=w300" data-anh-id="${anhId}"
+           style="width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in"
+           onclick="moXemAnhNhanh(this.dataset.anhId)">
+    `).join('');
   } else {
     document.getElementById('khoiAnhDinhKem').style.display='none';
   }
