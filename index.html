@@ -31,11 +31,12 @@
     --char-vignette: inset 0 0 26px rgba(60,32,10,0.16), inset 0 0 3px rgba(60,32,10,0.28);
   }
   *{box-sizing:border-box;}
-  html{overflow-x:hidden;}
+  html{overflow-x:hidden;overscroll-behavior-y:contain;}
   body{
     margin:0;color:var(--ink);font-family:'Inter',system-ui,sans-serif;
     background-color:var(--bg);
     overflow-x:hidden;
+    overscroll-behavior-y:contain;
     background-image:
       repeating-linear-gradient(90deg, rgba(60,32,10,0.05) 0px, transparent 2px, transparent 34px, rgba(60,32,10,0.05) 36px),
       repeating-linear-gradient(0deg, rgba(139,101,44,0.04) 0px, transparent 3px, transparent 7px),
@@ -258,7 +259,7 @@
     <div style="display:flex;align-items:center;gap:14px">
       <div class="today mono" id="todayLabel"></div>
       <button onclick="moModalCaiDat()" title="Cài đặt" style="background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:15px;color:var(--ink-soft)">⚙️</button>
-      <button onclick="dangXuat()" title="Đăng xuất" style="background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:15px;color:var(--ink-soft)">🚪</button>
+      <button onclick="dangXuat()" title="Đăng xuất" style="background:none;border:1.5px solid var(--urgent);border-radius:8px;width:42px;height:42px;font-size:19px;color:var(--urgent)">⏻</button>
     </div>
   </div>
 
@@ -400,6 +401,11 @@
       </div>
     </div>
     <div class="field">
+      <label>Tự khóa app sau (phút không thao tác)</label>
+      <input type="number" id="csAutoKhoaPhut" placeholder="15" min="0">
+      <div class="hint" style="margin-top:6px">Không đụng gì tới điện thoại quá số phút này thì app tự khóa lại, phải xác thực (vân tay/mật khẩu) mới vào tiếp — không mất dữ liệu đang xem dở. Đặt <b>0</b> để tắt hẳn tính năng này.</div>
+    </div>
+    <div class="field">
       <label>Chat ID Telegram (nhận nhắc)</label>
       <input id="csTgChatId" placeholder="VD: 8796559034">
     </div>
@@ -523,6 +529,8 @@
   <img class="lightbox-img" id="lightboxImg" src="" onclick="event.stopPropagation()">
 </div>
 
+<div id="pullRefreshChiBao" style="position:fixed;top:0;left:0;right:0;text-align:center;padding:10px;font-size:12.5px;font-weight:600;color:var(--accent);background:var(--bg);border-bottom:1px solid var(--line);transform:translateY(-100%);z-index:90;pointer-events:none">↓ Kéo xuống để làm mới</div>
+
 <script>
 /* ================== CẤU HÌNH ================== */
 const CONFIG = {
@@ -550,6 +558,9 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 
+let CAI_DAT_AUTO_KHOA_PHUT = 15; // mặc định 15 phút, sẽ được ghi đè bằng giá trị thật lưu trong Cài đặt ngay sau khi đăng nhập
+let LAN_HOAT_DONG_CUOI = Date.now();
+
 window.onload = async function(){
   document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('vi-VN', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'});
 
@@ -563,18 +574,24 @@ window.onload = async function(){
     return;
   }
 
-  // Phiên mới (trình duyệt/tab vừa đóng rồi mở lại) -> BẮT BUỘC xác thực lại, không tự động vào thẳng nữa
+  await thuXacThucLai();
+};
+
+// Thử vân tay/khuôn mặt trước (nếu đã bật), không được thì điền sẵn mật khẩu chờ bấm tay —
+// dùng chung cho lúc mới mở app (phiên mới) LẪN lúc bị tự khóa do không thao tác (xem khoaDoKhongHoatDong).
+async function thuXacThucLai(){
+  const mk = localStorage.getItem('nhacLich_matKhau');
+  if (!mk) return;
   const sinhTracId = localStorage.getItem('nhacLich_sinhTracId');
   if (sinhTracId && HO_TRO_SINH_TRAC) {
     const oke = await moKhoaBangSinhTrac(sinhTracId);
     if (oke) { thuDangNhap(mk); return; }
     // sinh trắc thất bại/hủy -> rơi xuống dưới, điền sẵn mật khẩu chờ bấm tay
   }
-
   // Không có sinh trắc, hoặc sinh trắc vừa thất bại -> điền sẵn mật khẩu cho đỡ gõ lại,
-  // nhưng vẫn cần bấm nút mới vào (không tự động), đúng nghĩa "đã đăng xuất" sau khi thoát trang.
+  // nhưng vẫn cần bấm nút mới vào (không tự động), đúng nghĩa "cần xác thực lại".
   document.getElementById('matKhauInput').value = mk;
-};
+}
 
 function dangNhap(){
   const mk = document.getElementById('matKhauInput').value;
@@ -612,6 +629,15 @@ async function thuDangNhap(mk){
       await taiDuLieu();
       moViecTuLinkSau();
       batDauTuDongLamMoi();
+      thietLapChanNutBack();
+      batDauTheoDoiKhongHoatDong();
+      // Tải nhẹ đúng 1 cài đặt cần dùng ngay (số phút tự khóa) — không chặn luồng vào app,
+      // lỡ mạng chậm/lỗi thì cứ dùng tạm giá trị mặc định 15 phút, không sao cả.
+      goiAPI({action:'layCaiDat', matKhau: mk}).then(r => {
+        if (r.ok && r.data && r.data.autoKhoaPhut !== undefined && r.data.autoKhoaPhut !== '') {
+          CAI_DAT_AUTO_KHOA_PHUT = Number(r.data.autoKhoaPhut);
+        }
+      }).catch(()=>{});
     } else {
       document.getElementById('loginError').style.display='block';
     }
@@ -620,6 +646,62 @@ async function thuDangNhap(mk){
     document.getElementById('loginError').style.display='block';
   }
 }
+
+// ---- Tự khóa sau N phút không thao tác (bảo mật kiểu app ngân hàng) — CHỈ khóa lại yêu cầu
+// xác thực (vân tay/mật khẩu), KHÔNG xóa dữ liệu đang xem dở, khác hẳn "Đăng xuất" thật. ----
+function ghiNhanHoatDong(){ LAN_HOAT_DONG_CUOI = Date.now(); }
+
+function batDauTheoDoiKhongHoatDong(){
+  ['touchstart','mousedown','keydown','scroll'].forEach(ev =>
+    document.addEventListener(ev, ghiNhanHoatDong, {passive:true})
+  );
+  setInterval(() => {
+    if (!CAI_DAT_AUTO_KHOA_PHUT) return; // 0 = tắt tính năng
+    if (document.getElementById('app').style.display === 'none') return; // đã khóa/đăng xuất rồi, khỏi kiểm nữa
+    if (Date.now() - LAN_HOAT_DONG_CUOI >= CAI_DAT_AUTO_KHOA_PHUT * 60 * 1000) khoaDoKhongHoatDong();
+  }, 30000); // kiểm tra mỗi 30 giây là đủ nhạy, khỏi tốn pin kiểm tra liên tục
+}
+
+function khoaDoKhongHoatDong(){
+  if (dangMoModalNao()) dongModalTrenCungNeuCo(); // đang mở bảng sửa dở thì đóng lại trước, tránh khóa giữa chừng gây rối
+  sessionStorage.removeItem('nhacLich_phienDaXacThuc'); // coi như phiên đã hết hạn -> lần vào lại phải xác thực
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='';
+  document.getElementById('loginError').style.display='none';
+  thuXacThucLai();
+}
+
+// ---- Chặn nút Back của điện thoại: đóng bảng con trước, chỉ thoát hẳn app khi anh Hưng
+// xác nhận rõ ràng ở đúng màn hình chính — tránh bấm back theo thói quen làm văng ra
+// ngoài app + mất trạng thái phiên đăng nhập (sessionStorage bị xóa khi tab đóng thật). ----
+function themLopChanBack(){
+  history.pushState({nhacLichChanBack:true}, '', location.href);
+}
+
+function dongModalTrenCungNeuCo(){
+  if (document.getElementById('lightboxOverlay').classList.contains('show')) { dongXemAnhNhanh(); return true; }
+  if (document.getElementById('overlay').classList.contains('show')) { dongModal(); return true; }
+  if (document.getElementById('overlayCaiDat').classList.contains('show')) { dongModalCaiDat(); return true; }
+  if (document.getElementById('overlayThemDuAn').classList.contains('show')) { dongModalThemDuAn(); return true; }
+  return false;
+}
+
+function thietLapChanNutBack(){
+  themLopChanBack(); // tạo sẵn 1 lớp đệm trong lịch sử trình duyệt để nút Back đầu tiên không thoát thẳng ra ngoài
+  window.addEventListener('popstate', () => {
+    if (dongModalTrenCungNeuCo()) {
+      themLopChanBack(); // vừa đóng 1 bảng con -> giữ lại lớp chặn cho lần bấm Back tiếp theo
+      return;
+    }
+    // Không còn bảng con nào mở -> đang ở màn hình chính -> hỏi xác nhận trước khi thoát thật
+    if (confirm('Thoát khỏi Lịch Hưng?')) {
+      history.back(); // đã hết lịch sử riêng của app -> điện thoại sẽ tự thoát hẳn ra ngoài
+    } else {
+      themLopChanBack(); // hủy ý định thoát -> chặn lại cho lần bấm Back kế tiếp
+    }
+  });
+}
+
 
 function moViecTuLinkSau(){
   if (!VIEC_CAN_MO) return;
@@ -795,6 +877,40 @@ function batDauTuDongLamMoi(){
     taiDuLieu();
   }, CHU_KY_TU_DONG_LAM_MOI);
 }
+
+/* ---- Kéo xuống để làm mới, TỰ VIẾT thay cho cơ chế mặc định của trình duyệt (đã tắt bằng
+   overscroll-behavior-y:contain ở CSS body) — cơ chế mặc định tải lại NGUYÊN TRANG, làm mất
+   hết trạng thái đang xem + cảm giác giống bị văng ra/đăng xuất. Bản tự viết này gọi lại ĐÚNG
+   hàm nút "🔄 Làm mới" (lamMoiThuCong) — chỉ lấy dữ liệu mới, không đụng gì tới phiên đăng nhập. ---- */
+(function thietLapKeoDeLamMoi(){
+  const NGUONG_KEO_PX = 70;
+  const chiBao = document.getElementById('pullRefreshChiBao');
+  let yBatDau = 0, dangKeo = false, daVuotNguong = false;
+
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY > 5) { dangKeo = false; return; } // chỉ kích hoạt khi đang ở đúng đầu trang
+    if (dangMoModalNao() || document.getElementById('lightboxOverlay').classList.contains('show')) { dangKeo = false; return; }
+    yBatDau = e.touches[0].clientY;
+    dangKeo = true;
+    daVuotNguong = false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', (e) => {
+    if (!dangKeo) return;
+    const khoangCach = e.touches[0].clientY - yBatDau;
+    if (khoangCach <= 0) { chiBao.style.transform = 'translateY(-100%)'; return; }
+    chiBao.style.transform = `translateY(${Math.min(khoangCach, NGUONG_KEO_PX + 20) - 40}px)`;
+    daVuotNguong = khoangCach > NGUONG_KEO_PX;
+    chiBao.textContent = daVuotNguong ? '↑ Thả để làm mới' : '↓ Kéo xuống để làm mới';
+  }, {passive:true});
+
+  document.addEventListener('touchend', () => {
+    if (!dangKeo) return;
+    dangKeo = false;
+    chiBao.style.transform = 'translateY(-100%)';
+    if (daVuotNguong) lamMoiThuCong();
+  }, {passive:true});
+})();
 
 document.addEventListener('visibilitychange', () => {
   // Quay lại tab sau khi rời đi thì làm mới ngay, khỏi chờ tới chu kỳ tiếp theo
@@ -1564,6 +1680,7 @@ async function moModalCaiDat(){
     document.getElementById('csGeminiModel').value = res.data.geminiModel || '';
     document.getElementById('csSoNgayQuaKhu').value = res.data.soNgayQuaKhu || '';
     document.getElementById('csSoViecToiDa').value = res.data.soViecToiDa || '';
+    document.getElementById('csAutoKhoaPhut').value = (res.data.autoKhoaPhut ?? ''); // giữ nguyên 0 nếu đã tắt, không coi 0 là rỗng
     document.getElementById('csTgTokenMoi').placeholder = 'Hiện tại: ' + res.data.tgTokenMask;
     document.getElementById('csClaudeKeyMoi').placeholder = 'Hiện tại: ' + res.data.claudeKeyMask;
     document.getElementById('csGeminiKeyMoi').placeholder = 'Hiện tại: ' + res.data.geminiKeyMask;
@@ -1632,6 +1749,7 @@ async function luuCaiDat(){
     dashboardUrl: document.getElementById('csDashboardUrl').value.trim(),
     soNgayQuaKhu: document.getElementById('csSoNgayQuaKhu').value.trim(),
     soViecToiDa: document.getElementById('csSoViecToiDa').value.trim(),
+    autoKhoaPhut: document.getElementById('csAutoKhoaPhut').value.trim(),
     tgTokenMoi: document.getElementById('csTgTokenMoi').value.trim(),
     claudeKeyMoi: document.getElementById('csClaudeKeyMoi').value.trim(),
     geminiKeyMoi: document.getElementById('csGeminiKeyMoi').value.trim(),
@@ -1644,6 +1762,7 @@ async function luuCaiDat(){
   const res = await goiAPI({action:'luuCaiDat', matKhau: matKhau(), caiDat});
   if(res.ok){
     if(res.matKhauDaDoi) localStorage.setItem('nhacLich_matKhau', matKhauMoi);
+    if(caiDat.autoKhoaPhut !== '') CAI_DAT_AUTO_KHOA_PHUT = Number(caiDat.autoKhoaPhut); // áp dụng ngay, khỏi chờ đăng nhập lại
     alert('Đã lưu cài đặt.');
     dongModalCaiDat();
   } else {
