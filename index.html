@@ -1281,17 +1281,8 @@ function moModalSua(id){
 
   if (!daHuy) document.getElementById('btnXoa').style.display='block';
 
-  const dsAnhDinhKem = String(item.anhDinhKemId || '').split(',').map(s => s.trim()).filter(Boolean);
-  if (dsAnhDinhKem.length) {
-    document.getElementById('khoiAnhDinhKem').style.display='block';
-    document.getElementById('anhDinhKemGallery').innerHTML = dsAnhDinhKem.map(anhId => `
-      <img src="https://drive.google.com/thumbnail?id=${anhId}&sz=w300" data-anh-id="${anhId}"
-           style="width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in"
-           onclick="moXemAnhNhanh(this.dataset.anhId)">
-    `).join('');
-  } else {
-    document.getElementById('khoiAnhDinhKem').style.display='none';
-  }
+  document.getElementById('khoiAnhDinhKem').style.display='block'; // luôn hiện, kể cả 0 ảnh, để còn nút ➕ thêm ảnh
+  veGalleryAnh(item);
 
   layDataForm(item);
   veReminderGrid();
@@ -1328,6 +1319,66 @@ function moXemAnhNhanh(anhId){
 function dongXemAnhNhanh(){
   document.getElementById('lightboxOverlay').classList.remove('show');
   document.getElementById('lightboxImg').src = '';
+}
+
+// Vẽ lại gallery ảnh đính kèm — dùng chung cho cả Việc lẫn Ghi chú, luôn kèm 1 ô "➕"
+// ở cuối để thêm ảnh mới ngay trong app (không cần qua Telegram) — dùng cho cả việc
+// MỚI tạo lẫn việc/ghi chú CŨ chưa từng có nút đính kèm qua Telegram.
+function veGalleryAnh(item){
+  const ds = String(item?.anhDinhKemId || '').split(',').map(s => s.trim()).filter(Boolean);
+  const thumbs = ds.map(anhId => `
+    <div style="position:relative;width:88px;height:88px">
+      <img src="https://drive.google.com/thumbnail?id=${anhId}&sz=w300" data-anh-id="${anhId}"
+           style="width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;display:block"
+           onclick="moXemAnhNhanh(this.dataset.anhId)">
+      <button type="button" onclick="event.stopPropagation();xoaAnhDinhKem('${anhId}')" title="Xóa ảnh này"
+              style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bg);background:var(--urgent);color:#fff;font-size:12px;line-height:20px;padding:0;cursor:pointer">✕</button>
+    </div>
+  `).join('');
+  const nutThem = `
+    <button type="button" onclick="themAnhDinhKem()" title="Thêm ảnh"
+            style="width:88px;height:88px;border-radius:8px;border:1.5px dashed var(--line);background:none;color:var(--ink-soft);font-size:26px;cursor:pointer">➕</button>
+  `;
+  document.getElementById('anhDinhKemGallery').innerHTML = thumbs + nutThem;
+}
+
+// Cập nhật lại đúng 1 item trong TAT_CA sau khi thêm/xóa ảnh, rồi vẽ lại cả gallery lẫn danh sách ngoài log
+function capNhatAnhTrongCache(anhDinhKemIdMoi){
+  const idx = TAT_CA.findIndex(x => x.id === DANG_SUA_ID);
+  if (idx >= 0) TAT_CA[idx] = {...TAT_CA[idx], anhDinhKemId: anhDinhKemIdMoi};
+  veGalleryAnh(idx >= 0 ? TAT_CA[idx] : {anhDinhKemId: anhDinhKemIdMoi});
+  ve();
+}
+
+// Thêm ảnh trực tiếp trong app — dùng cho việc/ghi chú CŨ chưa từng có nút "Đính kèm ảnh" qua Telegram
+function themAnhDinhKem(){
+  if (!DANG_SUA_ID) return;
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.onchange = async () => {
+    const file = inp.files[0];
+    if (!file) return;
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const res = await goiAPI({action:'themAnhVaoViec', matKhau: matKhau(), id: DANG_SUA_ID, anhBase64: base64});
+    if (!res.ok) { alert('⚠️ Lỗi thêm ảnh: ' + res.error); return; }
+    capNhatAnhTrongCache(res.anhDinhKemId);
+  };
+  inp.click();
+}
+
+// Xóa 1 ảnh khỏi việc/ghi chú — dọn dẹp khi lỡ đính nhầm hoặc không cần nữa nữa
+async function xoaAnhDinhKem(anhId){
+  if (!DANG_SUA_ID) return;
+  if (!confirm('Xóa ảnh này? Không thể hoàn tác.')) return;
+  const res = await goiAPI({action:'xoaAnhKhoiViec', matKhau: matKhau(), id: DANG_SUA_ID, anhId});
+  if (!res.ok) { alert('⚠️ Lỗi xóa ảnh: ' + res.error); return; }
+  capNhatAnhTrongCache(res.anhDinhKemId);
 }
 
 function chonChe(che){
