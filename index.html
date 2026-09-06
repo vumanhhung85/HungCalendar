@@ -31,12 +31,11 @@
     --char-vignette: inset 0 0 26px rgba(60,32,10,0.16), inset 0 0 3px rgba(60,32,10,0.28);
   }
   *{box-sizing:border-box;}
-  html{overflow-x:hidden;overscroll-behavior-y:contain;}
+  html{overflow-x:hidden;}
   body{
     margin:0;color:var(--ink);font-family:'Inter',system-ui,sans-serif;
     background-color:var(--bg);
     overflow-x:hidden;
-    overscroll-behavior-y:contain;
     background-image:
       repeating-linear-gradient(90deg, rgba(60,32,10,0.05) 0px, transparent 2px, transparent 34px, rgba(60,32,10,0.05) 36px),
       repeating-linear-gradient(0deg, rgba(139,101,44,0.04) 0px, transparent 3px, transparent 7px),
@@ -259,7 +258,7 @@
     <div style="display:flex;align-items:center;gap:14px">
       <div class="today mono" id="todayLabel"></div>
       <button onclick="moModalCaiDat()" title="Cài đặt" style="background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:15px;color:var(--ink-soft)">⚙️</button>
-      <button onclick="dangXuat()" title="Đăng xuất" style="background:none;border:1.5px solid var(--urgent);border-radius:8px;width:42px;height:42px;font-size:19px;color:var(--urgent)">⏻</button>
+      <button onclick="dangXuat()" title="Đăng xuất" style="background:none;border:1.5px solid var(--urgent);border-radius:8px;width:42px;height:42px;font-size:19px;color:var(--urgent)">🚪</button>
     </div>
   </div>
 
@@ -528,8 +527,6 @@
   <button class="lightbox-close" onclick="dongXemAnhNhanh()">✕</button>
   <img class="lightbox-img" id="lightboxImg" src="" onclick="event.stopPropagation()">
 </div>
-
-<div id="pullRefreshChiBao" style="position:fixed;top:0;left:0;right:0;text-align:center;padding:10px;font-size:12.5px;font-weight:600;color:var(--accent);background:var(--bg);border-bottom:1px solid var(--line);transform:translateY(-100%);z-index:90;pointer-events:none">↓ Kéo xuống để làm mới</div>
 
 <script>
 /* ================== CẤU HÌNH ================== */
@@ -877,40 +874,6 @@ function batDauTuDongLamMoi(){
     taiDuLieu();
   }, CHU_KY_TU_DONG_LAM_MOI);
 }
-
-/* ---- Kéo xuống để làm mới, TỰ VIẾT thay cho cơ chế mặc định của trình duyệt (đã tắt bằng
-   overscroll-behavior-y:contain ở CSS body) — cơ chế mặc định tải lại NGUYÊN TRANG, làm mất
-   hết trạng thái đang xem + cảm giác giống bị văng ra/đăng xuất. Bản tự viết này gọi lại ĐÚNG
-   hàm nút "🔄 Làm mới" (lamMoiThuCong) — chỉ lấy dữ liệu mới, không đụng gì tới phiên đăng nhập. ---- */
-(function thietLapKeoDeLamMoi(){
-  const NGUONG_KEO_PX = 70;
-  const chiBao = document.getElementById('pullRefreshChiBao');
-  let yBatDau = 0, dangKeo = false, daVuotNguong = false;
-
-  document.addEventListener('touchstart', (e) => {
-    if (window.scrollY > 5) { dangKeo = false; return; } // chỉ kích hoạt khi đang ở đúng đầu trang
-    if (dangMoModalNao() || document.getElementById('lightboxOverlay').classList.contains('show')) { dangKeo = false; return; }
-    yBatDau = e.touches[0].clientY;
-    dangKeo = true;
-    daVuotNguong = false;
-  }, {passive:true});
-
-  document.addEventListener('touchmove', (e) => {
-    if (!dangKeo) return;
-    const khoangCach = e.touches[0].clientY - yBatDau;
-    if (khoangCach <= 0) { chiBao.style.transform = 'translateY(-100%)'; return; }
-    chiBao.style.transform = `translateY(${Math.min(khoangCach, NGUONG_KEO_PX + 20) - 40}px)`;
-    daVuotNguong = khoangCach > NGUONG_KEO_PX;
-    chiBao.textContent = daVuotNguong ? '↑ Thả để làm mới' : '↓ Kéo xuống để làm mới';
-  }, {passive:true});
-
-  document.addEventListener('touchend', () => {
-    if (!dangKeo) return;
-    dangKeo = false;
-    chiBao.style.transform = 'translateY(-100%)';
-    if (daVuotNguong) lamMoiThuCong();
-  }, {passive:true});
-})();
 
 document.addEventListener('visibilitychange', () => {
   // Quay lại tab sau khi rời đi thì làm mới ngay, khỏi chờ tới chu kỳ tiếp theo
