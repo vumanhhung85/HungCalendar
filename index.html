@@ -622,8 +622,11 @@ async function thuDangNhap(mk){
       sessionStorage.setItem('nhacLich_phienDaXacThuc', '1');
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
-      await taiDanhSachDuAn();
-      await taiDuLieu();
+      // Chạy 2 lệnh gọi này SONG SONG thay vì lần lượt (trước đây phải chờ xong cái này mới
+      // gọi cái kia) — bớt được 1 vòng chờ mạng lúc đăng nhập. ve() gọi lại sau khi cả 2 xong
+      // để đảm bảo nhãn/màu dự án luôn đúng, dù cái nào chạy xong trước.
+      await Promise.all([taiDanhSachDuAn(), taiDuLieu()]);
+      ve();
       moViecTuLinkSau();
       batDauTuDongLamMoi();
       thietLapChanNutBack();
