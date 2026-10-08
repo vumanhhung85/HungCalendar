@@ -205,6 +205,50 @@
     .modal{padding:20px;}
     .row2{gap:8px;}
   }
+
+  /* ---------- MODULE KPI (tab 🎯 KPI) ---------- */
+  .kpi-wrap{display:flex;flex-direction:column;gap:14px;}
+  .kpi-head{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow), var(--char-vignette);}
+  .kpi-head-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .kpi-ky{font-family:'Fraunces',serif;font-size:19px;font-weight:600;}
+  .kpi-ky-sub{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .kpi-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .kpi-stat{background:#fff8e8;border:1px solid var(--line);border-radius:8px;padding:9px 10px;}
+  .kpi-stat .lb{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);font-weight:600;}
+  .kpi-stat .vl{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;margin-top:2px;}
+  .kpi-stat .vl small{font-size:11px;color:var(--ink-soft);font-weight:500;}
+  .kpi-stat.tot .vl{color:#4F6B4F;} .kpi-stat.xau .vl{color:var(--urgent);}
+  .kpi-xeploai{margin-top:10px;font-size:13px;color:var(--ink-soft);}
+  .kpi-xeploai b{color:var(--ink);}
+  .kpi-canhbao{margin-top:10px;display:flex;flex-direction:column;gap:5px;}
+  .kpi-canhbao div{font-size:12.5px;color:var(--urgent);background:#f6e3d8;border-radius:6px;padding:6px 9px;}
+  .kpi-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .kpi-actions button{flex:1 1 auto;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:600;color:var(--ink);}
+  .kpi-actions button.chinh{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .kpi-nhom{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin:6px 0 -4px;}
+  .kpi-card{background:var(--surface);border:1px solid var(--line);border-left:4px solid #3F5E7A;border-radius:var(--radius);padding:11px 13px;cursor:pointer;box-shadow:var(--shadow);}
+  .kpi-card:hover{border-color:var(--accent);}
+  .kpi-card.qua-han{border-left-color:var(--urgent);}
+  .kpi-card.gan-han{border-left-color:#C08A1E;}
+  .kpi-card.xong{border-left-color:#5F7350;opacity:.92;}
+  .kpi-card-top{display:flex;justify-content:space-between;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);}
+  .kpi-card.qua-han .kpi-card-top .han{color:var(--urgent);font-weight:600;}
+  .kpi-ten{font-weight:600;font-size:14px;margin:4px 0 6px;overflow-wrap:break-word;}
+  .kpi-badge{font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;}
+  .kpi-badge.ok{color:#4F6B4F;border-color:#5F7350;}
+  .kpi-badge.warn{color:var(--urgent);border-color:var(--urgent);}
+  .kpi-badge.sao{color:#9C6A00;border-color:#C08A1E;background:#fbf0d2;}
+  .kpi-tinhdiem{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:14px;color:var(--ink-soft);}
+  .kpi-preview{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:12px;}
+  .kpi-preview table{width:100%;border-collapse:collapse;font-size:12px;}
+  .kpi-preview th,.kpi-preview td{padding:6px 8px;border-bottom:1px solid #eadcc0;text-align:left;vertical-align:top;}
+  .kpi-preview th{position:sticky;top:0;background:var(--accent-soft);font-size:11px;}
+  .kpi-check{display:flex;align-items:center;gap:8px;font-size:13.5px;}
+  .kpi-check input{width:18px;height:18px;}
+  @media(max-width:720px){
+    .kpi-stats{grid-template-columns:repeat(2,1fr);}
+  }
+  .log.kpi-mode::before{display:none;}
 </style>
 </head>
 <body>
@@ -523,6 +567,97 @@
   </div>
 </div>
 
+<!-- ============ MODAL KPI: THÊM/SỬA NHIỆM VỤ ============ -->
+<div class="overlay" id="overlayKPI" onclick="if(event.target===this) dongModalKPI()">
+  <div class="modal">
+    <button onclick="dongModalKPI()" title="Đóng" style="position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-soft)">✕</button>
+    <h2 id="kpiModalTitle">Nhiệm vụ KPI</h2>
+    <div class="sub" id="kpiModalSub">Danh mục sản phẩm của kỳ đánh giá.</div>
+    <div class="kpi-tinhdiem" id="kpiTinhDiem" style="display:none"></div>
+
+    <div class="field"><label>Tên công việc</label><textarea id="kTen" rows="2"></textarea></div>
+    <div class="field"><label>Kết quả đầu ra</label><input id="kKetQua" placeholder="VD: Báo cáo, Kế hoạch, Hồ sơ..."></div>
+    <div class="row2">
+      <div class="field"><label>Hạn hoàn thành</label><input type="date" id="kHan"></div>
+      <div class="field"><label>Ngày giao / đăng ký</label><input type="date" id="kNgayGiao"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Loại công việc</label>
+        <select id="kLoai"><option>Thường xuyên</option><option>Đột xuất</option></select></div>
+      <div class="field"><label>Hệ số độ khó</label>
+        <select id="kHeSo"><option value="1">100%</option><option value="1.1">110%</option><option value="1.2">120%</option></select></div>
+    </div>
+    <div class="field"><label>Trục kết quả trọng tâm</label><select id="kTruc"></select></div>
+    <div class="field"><label>Minh chứng dự kiến (theo danh mục đã đăng ký)</label><input id="kMinhChungDuKien"></div>
+
+    <div style="border-top:1px dashed var(--line);margin:18px 0 14px"></div>
+    <div class="row2">
+      <div class="field"><label>Ngày hoàn thành</label><input type="date" id="kNgayXong"></div>
+      <div class="field"><label>Tự đánh giá kết quả</label>
+        <select id="kKetQuaPct">
+          <option value="100">100% (đạt)</option>
+          <option value="80">80% (sửa nhỏ)</option>
+          <option value="60">60% (sửa nhiều)</option>
+          <option value="0">0% (không đạt)</option>
+        </select></div>
+    </div>
+    <div class="hint" style="margin-top:-6px">Để trống ngày hoàn thành = việc còn đang làm. Tiến độ % tự tính theo số ngày làm việc trễ so với hạn.</div>
+    <div class="field"><label>Minh chứng (số văn bản, ngày, hệ thống...)</label><textarea id="kMinhChung" rows="3" placeholder="VD: Báo cáo số 95/BC-TYT ngày 05/12/2026"></textarea></div>
+    <div class="field" id="kKhoiAnh" style="display:none">
+      <label>Ảnh minh chứng <span style="font-weight:400;color:var(--ink-soft);font-size:11px">(chạm để xem lớn)</span></label>
+      <div id="kAnhGallery" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div class="field kpi-check"><input type="checkbox" id="kThuong"><label for="kThuong" style="margin:0;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink)">Đề xuất điểm thưởng (sáng kiến / vượt tiến độ nổi trội)</label></div>
+    <div class="field"><label>Ghi chú</label><input id="kGhiChu"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="dongModalKPI()">Hủy</button>
+      <button class="btn btn-danger" id="kBtnXoa" style="display:none" onclick="xoaKPIHienTai()">Xóa</button>
+      <button class="btn btn-primary" id="kBtnLuu" onclick="luuKPI()">Lưu</button>
+    </div>
+    <div class="modal-actions" id="kKhoiXongNhanh" style="display:none">
+      <button class="btn btn-ghost" onclick="kpiXongHomNay()">✅ Hoàn thành hôm nay</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL KPI: KỲ ĐÁNH GIÁ ============ -->
+<div class="overlay" id="overlayKPIKy" onclick="if(event.target===this) dongModalKPIKy()">
+  <div class="modal">
+    <button onclick="dongModalKPIKy()" title="Đóng" style="position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-soft)">✕</button>
+    <h2>Kỳ đánh giá KPI</h2>
+    <div class="sub">Nhiệm vụ, nhắc hạn và điểm đều tính theo kỳ đang chọn. Đổi sang kỳ mới thì danh sách kỳ cũ vẫn giữ trong Sheet.</div>
+    <div class="field"><label>Mã kỳ</label><input id="kyMa" placeholder="VD: Q4-2026"></div>
+    <div class="row2">
+      <div class="field"><label>Từ ngày</label><input type="date" id="kyTu"></div>
+      <div class="field"><label>Đến ngày (chốt kỳ)</label><input type="date" id="kyDen"></div>
+    </div>
+    <div class="field"><label>Điểm tiêu chí chung tự chấm (tối đa 30)</label><input type="number" id="kyDiemChung" min="0" max="30" step="1"></div>
+    <div class="hint">Dùng để tính tổng điểm dự kiến. Lưu ý: tiêu chí nào "Đảm bảo" thì chấm tối đa, không chấm nửa điểm.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="dongModalKPIKy()">Hủy</button>
+      <button class="btn btn-primary" onclick="luuKPIKy()">Lưu kỳ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL KPI: NHẬP EXCEL DANH MỤC ============ -->
+<div class="overlay" id="overlayKPINhap" onclick="if(event.target===this) dongModalKPINhap()">
+  <div class="modal" style="max-width:640px">
+    <button onclick="dongModalKPINhap()" title="Đóng" style="position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-soft)">✕</button>
+    <h2>Nhập danh mục từ Excel</h2>
+    <div class="sub" id="kpiNhapSub">Chọn file danh mục sản phẩm (mẫu import của Thành phố hoặc file xuất từ phần mềm đánh giá).</div>
+    <input type="file" id="kpiFileInput" accept=".xlsx,.xls" style="display:none" onchange="kpiDocFileExcel(event)">
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:12px" onclick="document.getElementById('kpiFileInput').click()">📂 Chọn file Excel</button>
+    <div class="kpi-preview" id="kpiPreview" style="display:none"></div>
+    <div class="hint" id="kpiNhapGhiChu" style="margin-top:0">Trùng tên công việc với nhiệm vụ đã có thì chỉ cập nhật phần kế hoạch — giữ nguyên ngày hoàn thành và minh chứng đã ghi.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="dongModalKPINhap()">Hủy</button>
+      <button class="btn btn-primary" id="kpiBtnNhap" onclick="kpiXacNhanNhap()" disabled>Nhập</button>
+    </div>
+  </div>
+</div>
+
 <div class="lightbox-overlay" id="lightboxOverlay" onclick="dongXemAnhNhanh()">
   <button class="lightbox-close" onclick="dongXemAnhNhanh()">✕</button>
   <img class="lightbox-img" id="lightboxImg" src="" onclick="event.stopPropagation()">
@@ -542,8 +677,14 @@ const MAU_MAC_DINH_DU_AN = ['#5F7350','#8B3A3A','#3F5E7A','#9C7A2E','#6B5580','#
 const REMINDER_PRESETS = [{l:'15 phút',v:15},{l:'30 phút',v:30},{l:'1 tiếng',v:60},{l:'2 tiếng',v:120},{l:'1 ngày',v:1440},{l:'1 tuần',v:10080}];
 
 let TAT_CA = [];
-let TAB_HIEN_TAI = 'homnay';
+let TAB_HIEN_TAI = new URLSearchParams(window.location.search).get('tab')==='kpi' ? 'kpi' : 'homnay'; // ?tab=kpi từ nút trên tin nhắc Telegram
 const TAB_KEO = { timer:null, daKeo:false, el:null };
+// ---- Trạng thái module KPI (khai báo sớm để veTabs() gọi lúc khởi động không lỗi) ----
+let KPI_DATA = null;          // {ky, ds, tong, canhBao}
+let KPI_DS_TRUC = [];
+let KPI_DANG_SUA = null;      // id nhiệm vụ đang mở trong modal (null = thêm mới)
+let KPI_DANG_TAI = false;
+let KPI_DONG_NHAP = [];       // các dòng đã đọc từ file Excel, chờ xác nhận
 let DU_AN_LOC = 'Tat';
 let CHON_NHAC = new Set([30]);
 let DANG_SUA_ID = null;
@@ -683,6 +824,9 @@ function dongModalTrenCungNeuCo(){
   if (document.getElementById('overlay').classList.contains('show')) { dongModal(); return true; }
   if (document.getElementById('overlayCaiDat').classList.contains('show')) { dongModalCaiDat(); return true; }
   if (document.getElementById('overlayThemDuAn').classList.contains('show')) { dongModalThemDuAn(); return true; }
+  if (document.getElementById('overlayKPI').classList.contains('show')) { dongModalKPI(); return true; }
+  if (document.getElementById('overlayKPIKy').classList.contains('show')) { dongModalKPIKy(); return true; }
+  if (document.getElementById('overlayKPINhap').classList.contains('show')) { dongModalKPINhap(); return true; }
   return false;
 }
 
@@ -854,6 +998,7 @@ async function taiDuLieu(){
   if (res.ok) {
     TAT_CA = res.data;
     ve();
+    if (TAB_HIEN_TAI==='kpi' || !KPI_DATA) taiKPI(); // tab KPI đang mở thì làm mới luôn; lần đầu thì tải để có số đếm trên tab
     const el = document.getElementById('lamMoiText');
     if (el) el.textContent = 'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   }
@@ -866,7 +1011,10 @@ let AUTO_LAM_MOI_TIMER = null;
 function dangMoModalNao(){
   return document.getElementById('overlay').classList.contains('show') ||
          document.getElementById('overlayCaiDat').classList.contains('show') ||
-         document.getElementById('overlayThemDuAn').classList.contains('show');
+         document.getElementById('overlayThemDuAn').classList.contains('show') ||
+         document.getElementById('overlayKPI').classList.contains('show') ||
+         document.getElementById('overlayKPIKy').classList.contains('show') ||
+         document.getElementById('overlayKPINhap').classList.contains('show');
 }
 
 function batDauTuDongLamMoi(){
@@ -1021,6 +1169,7 @@ document.addEventListener('pointerup', ketThucKeoThaChip);
 document.addEventListener('pointercancel', ketThucKeoThaChip);
 
 function demTheoTab(tabId){
+  if (tabId==='kpi') return kpiDemCanChuY();
   if (tabId==='lichsu') return TAT_CA.filter(x => x.trangThai==='DaHuy' || x.ketQua==='HoanThanh' || x.ketQua==='BoLo').length;
 
   let list = TAT_CA.filter(x=>x.trangThai!=='DaHuy');
@@ -1043,7 +1192,8 @@ const MAU_TAB = {
   tatca:    {dam:'#9C5A35', nhat:'#E8D6C4'},  // đất nung
   cholamro: {dam:'#8B2E1F', nhat:'#EACBC4'},  // đỏ trầm — giữ cảm giác cảnh báo
   ghichu:   {dam:'#6B5030', nhat:'#DFD2BC'},  // nâu
-  lichsu:   {dam:'#5C5548', nhat:'#DAD5C8'}   // xám đá
+  lichsu:   {dam:'#5C5548', nhat:'#DAD5C8'},  // xám đá
+  kpi:      {dam:'#3F5E7A', nhat:'#D3DCE6'}   // xanh trạm y tế
 };
 
 const TAB_DINH_NGHIA = {
@@ -1052,7 +1202,8 @@ const TAB_DINH_NGHIA = {
   tatca:    {label:'Tất cả'},
   cholamro: {label:'Chờ làm rõ', urgent:true},
   ghichu:   {label:'📝 Ghi chú'},
-  lichsu:   {label:'🗂️ Lịch sử'}
+  lichsu:   {label:'🗂️ Lịch sử'},
+  kpi:      {label:'🎯 KPI', urgent:true}
 };
 
 // Thứ tự tab do anh Hưng tự sắp xếp (nhấn giữ để kéo) — lưu riêng theo máy/trình duyệt qua localStorage
@@ -1193,6 +1344,9 @@ function layIdViecSapToi(){
 }
 
 function veLog(){
+  const elLog = document.getElementById('log');
+  if (TAB_HIEN_TAI==='kpi') { elLog.classList.add('kpi-mode'); veKPI(); return; }
+  elLog.classList.remove('kpi-mode');
   let list = layDanhSachTheoTab();
   if (DU_AN_LOC!=='Tat') list = list.filter(x=>x.duAn===DU_AN_LOC);
 
@@ -1825,6 +1979,412 @@ async function quickAddGui(){
   } catch(e){
     status.textContent = '⚠️ Lỗi kết nối: ' + e.message;
   }
+}
+
+/* ================== MODULE KPI (tab 🎯 KPI) ================== */
+// Mọi con số (tiến độ, điểm quy đổi, 70×B/A, số việc vượt mức) do Code.gs tính — ở đây chỉ hiển thị.
+// (biến trạng thái KPI khai báo ở đầu script, cạnh TAB_HIEN_TAI)
+
+function kpiNgayVN(s){ if(!s) return ''; const p=String(s).split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : s; }
+function kpiSo(x){ return (Math.round((Number(x)||0)*100)/100).toLocaleString('vi-VN'); }
+
+async function taiKPI(){
+  if (KPI_DANG_TAI) return;
+  KPI_DANG_TAI = true;
+  try {
+    const res = await goiAPI({action:'kpiLay', matKhau: matKhau()});
+    if (res.ok) { KPI_DATA = res.data; KPI_DS_TRUC = res.dsTruc || []; }
+    else if (TAB_HIEN_TAI==='kpi') document.getElementById('log').innerHTML = `<div class="empty">⚠️ Không tải được KPI: ${escapeHtml(res.error||'')}<br>Nếu vừa cập nhật Code.gs, nhớ Deploy → Version mới.</div>`;
+  } catch(e) {
+    if (TAB_HIEN_TAI==='kpi') document.getElementById('log').innerHTML = `<div class="empty">⚠️ Lỗi kết nối khi tải KPI: ${escapeHtml(e.message)}</div>`;
+  }
+  KPI_DANG_TAI = false;
+  if (KPI_DATA) { veTabs(); if (TAB_HIEN_TAI==='kpi') veKPI(); }
+}
+
+function kpiNhanDuLieuMoi(res){
+  if (res && res.data) { KPI_DATA = res.data; KPI_DS_TRUC = res.dsTruc || KPI_DS_TRUC; }
+  veTabs();
+  if (TAB_HIEN_TAI==='kpi') veKPI();
+}
+
+function kpiDemCanChuY(){
+  if (!KPI_DATA) return 0;
+  return KPI_DATA.ds.filter(x => x.quaHan || x.thieuMinhChung || (!x.daXong && x.soNgayConLai!==null && x.soNgayConLai<=3)).length;
+}
+
+function veKPI(){
+  const el = document.getElementById('log');
+  if (!KPI_DATA) { el.innerHTML = '<div class="empty">Đang tải KPI…</div>'; taiKPI(); return; }
+  const {ky, ds, tong, canhBao} = KPI_DATA;
+  const hanhDong = `
+    <div class="kpi-actions">
+      <button class="chinh" onclick="moModalKPINhap()">📥 Nhập Excel danh mục</button>
+      <button onclick="moModalKPI(null)">➕ Thêm nhiệm vụ</button>
+      <button onclick="moModalKPIKy()">🗓 Kỳ đánh giá</button>
+      <button onclick="kpiXuatExcel()" ${ds.length?'':'disabled'}>📤 Xuất bảng tính điểm</button>
+    </div>`;
+
+  const conLaiKy = tong.soNgayConLaiKy;
+  const nhanKy = conLaiKy >= 0 ? `còn ${conLaiKy} ngày` : `đã chốt ${-conLaiKy} ngày trước`;
+  const vuotDu = tong.soVuot >= tong.canVuot && tong.soNV>0;
+  const dau = `
+    <div class="kpi-head">
+      <div class="kpi-head-top">
+        <div>
+          <div class="kpi-ky">🎯 KPI kỳ ${escapeHtml(ky.ma)}</div>
+          <div class="kpi-ky-sub">${kpiNgayVN(ky.tu)} – ${kpiNgayVN(ky.den)} · ${nhanKy}${ky.daCauHinh?'':' · <span style="color:var(--urgent)">kỳ tự đoán, bấm 🗓 để xác nhận</span>'}</div>
+        </div>
+      </div>
+      <div class="kpi-stats">
+        <div class="kpi-stat"><div class="lb">Đã xong</div><div class="vl">${tong.soXong}<small>/${tong.soNV} việc</small></div></div>
+        <div class="kpi-stat ${vuotDu?'tot':(tong.soNV?'xau':'')}"><div class="lb">Vượt mức</div><div class="vl">${tong.soVuot}<small>/${tong.canVuot} cần (30%)</small></div></div>
+        <div class="kpi-stat"><div class="lb">KPI hiện tại</div><div class="vl">${kpiSo(tong.kpiHienTai)}<small>/70</small></div></div>
+        <div class="kpi-stat ${tong.tongDuKien>=90?'tot':''}"><div class="lb">Tổng dự kiến</div><div class="vl">${kpiSo(tong.tongDuKien)}<small>/100</small></div></div>
+      </div>
+      <div class="kpi-xeploai">
+        A = <b>${kpiSo(tong.A)}</b> · B hiện tại = <b>${kpiSo(tong.B)}</b> · tiêu chí chung <b>${kpiSo(ky.diemChung)}</b>/30${tong.thuong?` · thưởng đề xuất <b>+${kpiSo(tong.thuong)}</b>`:''}<br>
+        Nếu các việc còn lại xong đúng hạn, đạt 100%: KPI <b>${kpiSo(tong.kpiDuKien)}</b>/70 → <b>${escapeHtml(tong.xepLoaiDuKien)}</b>
+      </div>
+      ${canhBao.length ? `<div class="kpi-canhbao">${canhBao.map(c=>`<div>⚠️ ${escapeHtml(c)}</div>`).join('')}</div>` : ''}
+    </div>`;
+
+  if (!ds.length) {
+    el.innerHTML = `<div class="kpi-wrap">${dau}${hanhDong}<div class="empty" style="padding-left:0">Kỳ này chưa có nhiệm vụ nào. Bấm “📥 Nhập Excel danh mục” để nạp file danh mục đã đăng ký, hoặc “➕ Thêm nhiệm vụ”.</div></div>`;
+    return;
+  }
+
+  const quaHan = ds.filter(x=>x.quaHan), dangLam = ds.filter(x=>!x.daXong && !x.quaHan), xong = ds.filter(x=>x.daXong);
+  const nhom = (ten, arr) => arr.length ? `<div class="kpi-nhom">${ten} (${arr.length})</div>` + arr.map(veTheKPI).join('') : '';
+  el.innerHTML = `<div class="kpi-wrap">${dau}${hanhDong}${nhom('🔴 Quá hạn', quaHan)}${nhom('⏳ Đang làm', dangLam)}${nhom('✅ Đã xong', xong)}</div>`;
+}
+
+function veTheKPI(x){
+  let lop = 'kpi-card', han = x.hanHoanThanh ? `Hạn ${kpiNgayVN(x.hanHoanThanh)}` : 'Chưa có hạn';
+  if (x.daXong) { lop += ' xong'; han += ` · xong ${kpiNgayVN(x.ngayHoanThanh)}`; }
+  else if (x.quaHan) { lop += ' qua-han'; han += ` · quá ${-x.soNgayConLai} ngày`; }
+  else if (x.soNgayConLai!==null) { if (x.soNgayConLai<=3) lop += ' gan-han'; han += ` · còn ${x.soNgayConLai} ngày`; }
+  const diem = x.daXong ? `${kpiSo(x.diemQuyDoi)}/${kpiSo(x.diemToiDa)} đ` : `${kpiSo(x.diemToiDa)} đ`;
+  const b = [];
+  b.push(`<span class="kpi-badge">${escapeHtml(x.loaiCongViec)}${x.heSoSo!==1?` · ${Math.round(x.heSoSo*100)}%`:''}</span>`);
+  if (x.daXong) {
+    b.push(`<span class="kpi-badge">Tiến độ ${Math.round(x.tienDo*100)}% · KQ ${Math.round(x.ketQua*100)}%</span>`);
+    b.push(x.thieuMinhChung ? `<span class="kpi-badge warn">📎 Thiếu minh chứng</span>` : `<span class="kpi-badge ok">📎 Có minh chứng</span>`);
+    if (x.vuotMuc) b.push(`<span class="kpi-badge sao">⭐ Vượt mức</span>`);
+  }
+  if (x.deXuatThuong==='Co') b.push(`<span class="kpi-badge sao">🏅 Đề xuất thưởng</span>`);
+  const truc = (x.truc||'').match(/TRỤC\s*\d/i);
+  if (truc) b.push(`<span class="kpi-badge">${escapeHtml(truc[0])}</span>`);
+  return `<div class="${lop}" onclick="moModalKPI('${x.id}')">
+      <div class="kpi-card-top"><span class="han">${han}</span><span>${diem}</span></div>
+      <div class="kpi-ten">${escapeHtml(x.tenCongViec)}</div>
+      <div class="entry-meta">${b.join('')}</div>
+    </div>`;
+}
+
+/* ---- Modal sửa/thêm nhiệm vụ ---- */
+function moModalKPI(id){
+  KPI_DANG_SUA = id;
+  const x = id && KPI_DATA ? KPI_DATA.ds.find(d=>d.id===id) : null;
+  if (id && !x) { alert('⚠️ Không tìm thấy nhiệm vụ này (có thể vừa bị xóa).'); return; }
+  document.getElementById('kTruc').innerHTML = '<option value="">— Chọn trục —</option>' +
+    KPI_DS_TRUC.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  document.getElementById('kpiModalTitle').textContent = x ? 'Sửa nhiệm vụ KPI' : 'Thêm nhiệm vụ KPI';
+  document.getElementById('kpiModalSub').textContent = KPI_DATA ? `Kỳ ${KPI_DATA.ky.ma}` : '';
+  document.getElementById('kTen').value = x?.tenCongViec || '';
+  document.getElementById('kKetQua').value = x?.ketQuaDauRa || '';
+  document.getElementById('kHan').value = x?.hanHoanThanh || '';
+  document.getElementById('kNgayGiao').value = x?.ngayGiao || '';
+  document.getElementById('kLoai').value = x?.loaiCongViec || 'Thường xuyên';
+  document.getElementById('kHeSo').value = String(x?.heSoSo || 1);
+  document.getElementById('kTruc').value = x?.truc || '';
+  document.getElementById('kMinhChungDuKien').value = x?.minhChungDuKien || '';
+  document.getElementById('kNgayXong').value = x?.ngayHoanThanh || '';
+  document.getElementById('kKetQuaPct').value = x && x.ketQuaPct!=='' ? String(x.ketQuaPct) : '100';
+  document.getElementById('kMinhChung').value = x?.minhChung || '';
+  document.getElementById('kThuong').checked = x?.deXuatThuong === 'Co';
+  document.getElementById('kGhiChu').value = x?.ghiChu || '';
+  document.getElementById('kBtnXoa').style.display = x ? 'block' : 'none';
+  document.getElementById('kKhoiXongNhanh').style.display = x && !x.daXong ? 'flex' : 'none';
+  document.getElementById('kKhoiAnh').style.display = x ? 'block' : 'none';
+  if (x) veGalleryAnhKPI(x.anhMinhChungID);
+  const td = document.getElementById('kpiTinhDiem');
+  if (x && x.daXong) {
+    td.style.display = 'block';
+    td.innerHTML = `Điểm thực hiện = ${kpiSo(x.diemChuanSo)} × (30% × ${Math.round(x.tienDo*100)}% + 70% × ${Math.round(x.ketQua*100)}%) = ${kpiSo(x.diemThucHien)}<br>`+
+      `Điểm quy đổi = ${Math.round(x.heSoSo*100)}% × ${kpiSo(x.diemThucHien)} = <b>${kpiSo(x.diemQuyDoi)}</b> / tối đa ${kpiSo(x.diemToiDa)}`+
+      (x.soNgayTre ? ` · trễ ${x.soNgayTre} ngày làm việc` : (x.vuotMuc ? ' · ⭐ vượt mức' : ''));
+  } else td.style.display = 'none';
+  document.getElementById('overlayKPI').classList.add('show');
+}
+function dongModalKPI(){ document.getElementById('overlayKPI').classList.remove('show'); }
+
+function kpiDocForm(){
+  return {
+    id: KPI_DANG_SUA || undefined,
+    tenCongViec: document.getElementById('kTen').value.trim(),
+    ketQuaDauRa: document.getElementById('kKetQua').value.trim(),
+    hanHoanThanh: document.getElementById('kHan').value,
+    ngayGiao: document.getElementById('kNgayGiao').value,
+    loaiCongViec: document.getElementById('kLoai').value,
+    heSo: document.getElementById('kHeSo').value,
+    truc: document.getElementById('kTruc').value,
+    minhChungDuKien: document.getElementById('kMinhChungDuKien').value.trim(),
+    ngayHoanThanh: document.getElementById('kNgayXong').value,
+    ketQuaPct: document.getElementById('kKetQuaPct').value,
+    minhChung: document.getElementById('kMinhChung').value.trim(),
+    deXuatThuong: document.getElementById('kThuong').checked ? 'Co' : '',
+    ghiChu: document.getElementById('kGhiChu').value.trim()
+  };
+}
+
+async function luuKPI(){
+  const item = kpiDocForm();
+  if (!item.tenCongViec) { alert('Tên công việc không được để trống.'); return; }
+  if (!item.hanHoanThanh) { alert('Cần có hạn hoàn thành — đây là căn cứ tính tiến độ và nhắc hạn.'); return; }
+  const btn = document.getElementById('kBtnLuu');
+  btn.disabled = true; btn.textContent = 'Đang lưu…';
+  try {
+    const res = await goiAPI({action:'kpiLuu', matKhau: matKhau(), item});
+    if (!res.ok) { alert('⚠️ Lỗi lưu: ' + res.error); return; }
+    dongModalKPI();
+    kpiNhanDuLieuMoi(res);
+  } catch(e) { alert('⚠️ Lỗi kết nối: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Lưu'; }
+}
+
+function kpiXongHomNay(){
+  const d = new Date();
+  document.getElementById('kNgayXong').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if (!document.getElementById('kMinhChung').value.trim()) {
+    document.getElementById('kMinhChung').focus();
+    alert('Đã điền ngày hoàn thành là hôm nay. Anh ghi luôn minh chứng (số văn bản) hoặc thêm ảnh rồi bấm Lưu.');
+    return;
+  }
+  luuKPI();
+}
+
+async function xoaKPIHienTai(){
+  if (!KPI_DANG_SUA) return;
+  if (!confirm('Xóa nhiệm vụ này khỏi danh mục kỳ hiện tại? (Vẫn còn trong Sheet với trạng thái Hủy.)')) return;
+  const res = await goiAPI({action:'kpiXoa', matKhau: matKhau(), id: KPI_DANG_SUA});
+  if (!res.ok) { alert('⚠️ Lỗi xóa: ' + res.error); return; }
+  dongModalKPI();
+  kpiNhanDuLieuMoi(res);
+}
+
+function veGalleryAnhKPI(csv){
+  const ds = String(csv||'').split(',').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('kAnhGallery').innerHTML = ds.map(anhId => `
+    <div style="position:relative;width:88px;height:88px">
+      <img src="https://drive.google.com/thumbnail?id=${anhId}&sz=w300" data-anh-id="${anhId}"
+           style="width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;display:block"
+           onclick="moXemAnhNhanh(this.dataset.anhId)">
+      <button type="button" onclick="event.stopPropagation();xoaAnhKPI('${anhId}')" title="Xóa ảnh này"
+              style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bg);background:var(--urgent);color:#fff;font-size:12px;line-height:20px;padding:0">✕</button>
+    </div>`).join('') + `
+    <button type="button" onclick="themAnhKPI()" title="Thêm ảnh minh chứng"
+            style="width:88px;height:88px;border-radius:8px;border:1.5px dashed var(--line);background:none;color:var(--ink-soft);font-size:26px;cursor:pointer">➕</button>`;
+}
+
+function themAnhKPI(){
+  if (!KPI_DANG_SUA) return;
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async () => {
+    const file = inp.files[0];
+    if (!file) return;
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const res = await goiAPI({action:'kpiThemAnh', matKhau: matKhau(), id: KPI_DANG_SUA, anhBase64: base64});
+    if (!res.ok) { alert('⚠️ Lỗi thêm ảnh: ' + res.error); return; }
+    veGalleryAnhKPI(res.anhMinhChungID);
+    kpiNhanDuLieuMoi(res);
+  };
+  inp.click();
+}
+
+async function xoaAnhKPI(anhId){
+  if (!KPI_DANG_SUA || !confirm('Xóa ảnh minh chứng này? Không thể hoàn tác.')) return;
+  const res = await goiAPI({action:'kpiXoaAnh', matKhau: matKhau(), id: KPI_DANG_SUA, anhId});
+  if (!res.ok) { alert('⚠️ Lỗi xóa ảnh: ' + res.error); return; }
+  veGalleryAnhKPI(res.anhMinhChungID);
+  kpiNhanDuLieuMoi(res);
+  if (res.canhBao) setTimeout(()=>alert('Đã gỡ ảnh khỏi nhiệm vụ, nhưng chuyển file vào thùng rác Drive bị lỗi: ' + res.canhBao), 200);
+}
+
+/* ---- Kỳ đánh giá ---- */
+function moModalKPIKy(){
+  const ky = KPI_DATA?.ky || {};
+  document.getElementById('kyMa').value = ky.ma || '';
+  document.getElementById('kyTu').value = ky.tu || '';
+  document.getElementById('kyDen').value = ky.den || '';
+  document.getElementById('kyDiemChung').value = ky.diemChung ?? 30;
+  document.getElementById('overlayKPIKy').classList.add('show');
+}
+function dongModalKPIKy(){ document.getElementById('overlayKPIKy').classList.remove('show'); }
+
+async function luuKPIKy(){
+  const ky = {
+    ma: document.getElementById('kyMa').value.trim(),
+    tu: document.getElementById('kyTu').value,
+    den: document.getElementById('kyDen').value,
+    diemChung: document.getElementById('kyDiemChung').value
+  };
+  if (!ky.ma || !ky.tu || !ky.den) { alert('Cần đủ mã kỳ, ngày bắt đầu và ngày chốt kỳ.'); return; }
+  const res = await goiAPI({action:'kpiLuuKy', matKhau: matKhau(), ky});
+  if (!res.ok) { alert('⚠️ ' + res.error); return; }
+  dongModalKPIKy();
+  kpiNhanDuLieuMoi(res);
+}
+
+/* ---- Nhập / xuất Excel (SheetJS tải khi cần, không làm chậm lúc mở app) ---- */
+function napSheetJS(){
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Không tải được thư viện đọc Excel (kiểm tra mạng).'));
+    document.head.appendChild(s);
+  });
+}
+
+function moModalKPINhap(){
+  KPI_DONG_NHAP = [];
+  document.getElementById('kpiFileInput').value = '';
+  document.getElementById('kpiPreview').style.display = 'none';
+  document.getElementById('kpiBtnNhap').disabled = true;
+  document.getElementById('kpiBtnNhap').textContent = 'Nhập';
+  document.getElementById('kpiNhapSub').textContent = `Nạp vào kỳ ${KPI_DATA?.ky?.ma || '(chưa đặt)'} — chọn file danh mục (mẫu import của Thành phố hoặc file xuất từ phần mềm đánh giá).`;
+  document.getElementById('overlayKPINhap').classList.add('show');
+}
+function dongModalKPINhap(){ document.getElementById('overlayKPINhap').classList.remove('show'); }
+
+function kpiBoDau(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().replace(/\s+/g,' ').trim(); }
+
+function kpiGiaTriNgay(v){
+  if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+  return String(v||'').trim();
+}
+
+// Đọc mọi sheet, tìm hàng tiêu đề có "Tên công việc", map cột theo tên tiêu đề (không phụ thuộc vị trí cột)
+function kpiPhanTichBang(aoa){
+  let hdr = -1;
+  for (let i=0; i<Math.min(aoa.length, 15); i++) {
+    if ((aoa[i]||[]).some(c => kpiBoDau(c).startsWith('ten cong viec'))) { hdr = i; break; }
+  }
+  if (hdr === -1) return null;
+  const cot = {};
+  (aoa[hdr]||[]).forEach((c, j) => {
+    const t = kpiBoDau(c);
+    if (t.startsWith('ten cong viec')) cot.ten = j;
+    else if (t.startsWith('ket qua dau ra')) cot.kq = j;
+    else if (t.startsWith('thoi han')) cot.han = j;
+    else if (t.startsWith('loai cong viec')) cot.loai = j;
+    else if (t.startsWith('he so')) cot.heSo = j;
+    else if (t.startsWith('minh chung')) cot.mc = j;
+    else if (t.startsWith('ghi chu')) cot.gc = j;
+    else if (t.startsWith('truc')) cot.truc = j;
+    else if (t.startsWith('trang thai')) cot.tt = j;
+  });
+  const rows = [];
+  let trucHienTai = '';
+  for (let i=hdr+1; i<aoa.length; i++) {
+    const r = aoa[i] || [];
+    const ten = String(r[cot.ten] ?? '').trim();
+    const dongChu = r.map(c=>String(c??'')).join(' ');
+    const trucTrongDong = dongChu.match(/TRỤC\s*\d[^]*/i);
+    if (!ten || /^\(?\d+\)?$/.test(ten)) { if (trucTrongDong) trucHienTai = trucTrongDong[0].trim(); continue; } // dòng số thứ tự cột / dòng trống
+    if (/^TRỤC\s*\d/i.test(ten)) { trucHienTai = ten; continue; }      // dòng tiêu đề nhóm trục (file xuất từ phần mềm)
+    if (kpiBoDau(ten).startsWith('tong so')) continue;
+    if (cot.tt !== undefined && kpiBoDau(r[cot.tt]) === 'khong hoat dong') continue;
+    rows.push({
+      tenCongViec: ten,
+      ketQuaDauRa: cot.kq!==undefined ? String(r[cot.kq]??'').trim() : '',
+      hanHoanThanh: cot.han!==undefined ? kpiGiaTriNgay(r[cot.han]) : '',
+      loaiCongViec: cot.loai!==undefined ? String(r[cot.loai]??'').trim() : '',
+      heSo: cot.heSo!==undefined ? String(r[cot.heSo]??'1') : '1',
+      minhChungDuKien: cot.mc!==undefined ? String(r[cot.mc]??'').trim() : '',
+      ghiChu: cot.gc!==undefined ? String(r[cot.gc]??'').trim() : '',
+      truc: (cot.truc!==undefined && String(r[cot.truc]??'').trim()) || trucHienTai
+    });
+  }
+  return rows;
+}
+
+async function kpiDocFileExcel(ev){
+  const file = ev.target.files[0];
+  if (!file) return;
+  const pv = document.getElementById('kpiPreview');
+  pv.style.display = 'block';
+  pv.innerHTML = '<div style="padding:12px">Đang đọc file…</div>';
+  try {
+    await napSheetJS();
+    const wb = XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:true});
+    let rows = null;
+    for (const ten of wb.SheetNames) {
+      rows = kpiPhanTichBang(XLSX.utils.sheet_to_json(wb.Sheets[ten], {header:1, raw:true, defval:''}));
+      if (rows && rows.length) break;
+    }
+    if (!rows || !rows.length) { pv.innerHTML = '<div style="padding:12px;color:var(--urgent)">Không tìm thấy bảng có cột "Tên công việc" trong file này.</div>'; return; }
+    KPI_DONG_NHAP = rows;
+    pv.innerHTML = `<table><tr><th>#</th><th>Tên công việc</th><th>Hạn</th><th>Loại</th><th>Hệ số</th></tr>` +
+      rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.tenCongViec)}</td><td>${escapeHtml(r.hanHoanThanh)}</td><td>${escapeHtml(r.loaiCongViec)}</td><td>${escapeHtml(r.heSo)}</td></tr>`).join('') + '</table>';
+    const btn = document.getElementById('kpiBtnNhap');
+    btn.disabled = false; btn.textContent = `Nhập ${rows.length} nhiệm vụ`;
+  } catch(e) {
+    pv.innerHTML = `<div style="padding:12px;color:var(--urgent)">⚠️ ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function kpiXacNhanNhap(){
+  if (!KPI_DONG_NHAP.length) return;
+  const btn = document.getElementById('kpiBtnNhap');
+  btn.disabled = true; btn.textContent = 'Đang nhập…';
+  try {
+    const res = await goiAPI({action:'kpiNhap', matKhau: matKhau(), rows: KPI_DONG_NHAP});
+    if (!res.ok) { alert('⚠️ Lỗi nhập: ' + res.error); btn.disabled = false; btn.textContent = 'Nhập lại'; return; }
+    dongModalKPINhap();
+    kpiNhanDuLieuMoi(res);
+    const k = res.ketQua;
+    alert(`✅ Đã nhập: thêm mới ${k.them}, cập nhật ${k.capNhat}${k.boQua?`, bỏ qua ${k.boQua} dòng trống`:''}.`);
+  } catch(e) { alert('⚠️ Lỗi kết nối: ' + e.message); btn.disabled = false; btn.textContent = 'Nhập lại'; }
+}
+
+async function kpiXuatExcel(){
+  if (!KPI_DATA || !KPI_DATA.ds.length) return;
+  try { await napSheetJS(); } catch(e) { alert(e.message); return; }
+  const {ky, ds, tong} = KPI_DATA;
+  const aoa = [
+    [`BẢNG TÍNH ĐIỂM KPI — KỲ ${ky.ma} (${kpiNgayVN(ky.tu)} – ${kpiNgayVN(ky.den)})`],
+    [],
+    ['STT','Tên công việc','Loại','Điểm chuẩn','Hệ số độ khó','Điểm quy đổi tối đa','Hạn hoàn thành','Ngày hoàn thành','Tiến độ %','Kết quả %','Điểm thực hiện','Điểm quy đổi thực tế','Vượt mức','Minh chứng']
+  ];
+  ds.forEach((x,i)=>aoa.push([
+    i+1, x.tenCongViec, x.loaiCongViec, x.diemChuanSo, x.heSoSo, x.diemToiDa,
+    kpiNgayVN(x.hanHoanThanh), kpiNgayVN(x.ngayHoanThanh),
+    x.daXong ? x.tienDo : '', x.daXong ? x.ketQua : '', x.daXong ? x.diemThucHien : '', x.daXong ? x.diemQuyDoi : 0,
+    x.vuotMuc ? 'X' : '', x.minhChung || ''
+  ]));
+  aoa.push([]);
+  aoa.push(['','Tổng điểm quy đổi tối đa (A)','','','',tong.A]);
+  aoa.push(['','Tổng điểm quy đổi thực tế (B)','','','','','','','','','',tong.B]);
+  aoa.push(['','Điểm KPI = 70 × B / A','','','','','','','','','',tong.kpiHienTai]);
+  aoa.push(['','Số nhiệm vụ vượt mức', '', '', '', '', '', '', '', '', '', `${tong.soVuot}/${tong.soNV} (cần ${tong.canVuot})`]);
+  aoa.push(['','Điểm thưởng đề xuất','','','','','','','','','',tong.thuong]);
+  aoa.push(['','Điểm tiêu chí chung tự chấm','','','','','','','','','',ky.diemChung]);
+  aoa.push(['','TỔNG (hiện tại)','','','','','','','','','',tong.tongHienTai]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:5},{wch:55},{wch:12},{wch:8},{wch:8},{wch:10},{wch:12},{wch:12},{wch:8},{wch:8},{wch:10},{wch:12},{wch:8},{wch:40}];
+  for (let r=3; r<3+ds.length; r++) ['I','J'].forEach(c=>{ const cell = ws[c+(r+1)]; if (cell && typeof cell.v==='number') cell.z='0%'; });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Bang tinh diem');
+  XLSX.writeFile(wb, `BangTinhDiem_KPI_${ky.ma}.xlsx`);
 }
 </script>
 </body>
