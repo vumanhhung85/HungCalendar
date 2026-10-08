@@ -2276,16 +2276,17 @@ function kpiGiaTriNgay(v){
 function kpiPhanTichBang(aoa){
   let hdr = -1;
   for (let i=0; i<Math.min(aoa.length, 15); i++) {
-    if ((aoa[i]||[]).some(c => kpiBoDau(c).startsWith('ten cong viec'))) { hdr = i; break; }
+    if ((aoa[i]||[]).some(c => { const t = kpiBoDau(c); return t.startsWith('ten cong viec') || t === 'nhiem vu'; })) { hdr = i; break; }
   }
   if (hdr === -1) return null;
   const cot = {};
   (aoa[hdr]||[]).forEach((c, j) => {
     const t = kpiBoDau(c);
-    if (t.startsWith('ten cong viec')) cot.ten = j;
+    if (t.startsWith('ten cong viec') || t === 'nhiem vu') cot.ten = j;
     else if (t.startsWith('ket qua dau ra')) cot.kq = j;
-    else if (t.startsWith('thoi han')) cot.han = j;
-    else if (t.startsWith('loai cong viec')) cot.loai = j;
+    else if (t.startsWith('thoi han') || t === 'han') cot.han = j;
+    else if (t.startsWith('loai cong viec') || t.startsWith('loai nhiem vu')) cot.loai = j;
+    else if (t.startsWith('ngay giao')) cot.ngayGiao = j;
     else if (t.startsWith('he so')) cot.heSo = j;
     else if (t.startsWith('minh chung')) cot.mc = j;
     else if (t.startsWith('ghi chu')) cot.gc = j;
@@ -2307,6 +2308,7 @@ function kpiPhanTichBang(aoa){
       tenCongViec: ten,
       ketQuaDauRa: cot.kq!==undefined ? String(r[cot.kq]??'').trim() : '',
       hanHoanThanh: cot.han!==undefined ? kpiGiaTriNgay(r[cot.han]) : '',
+      ngayGiao: cot.ngayGiao!==undefined ? kpiGiaTriNgay(r[cot.ngayGiao]) : '',
       loaiCongViec: cot.loai!==undefined ? String(r[cot.loai]??'').trim() : '',
       heSo: cot.heSo!==undefined ? String(r[cot.heSo]??'1') : '1',
       minhChungDuKien: cot.mc!==undefined ? String(r[cot.mc]??'').trim() : '',
